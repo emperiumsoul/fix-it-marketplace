@@ -1,0 +1,106 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #003912;
+  --color-primary-hover: #00280D;
+  --color-primary-tint: #F3FDF9;
+
+  --color-accent-cyan: #3DD6F2;
+  --color-accent-burgundy: #4D1727;
+  --color-accent-orange: #FF7646;
+
+  --color-neutral-headings: #222325;
+  --color-neutral-body: #404145;
+  --color-neutral-secondary: #62646A;
+  --color-neutral-muted: #74767E;
+  --color-neutral-border: #DADBDD;
+  --color-neutral-surface: #F7F7F7;
+  --color-neutral-white: #FFFFFF;
+
+  --color-semantic-success: #166334;
+  --color-semantic-warning: #92400E;
+  --color-semantic-error: #B42318;
+  --color-semantic-info: #1D4EDB;
+
+  --font-grotesque: var(--font-grotesque), system-ui, -apple-system, sans-serif;
+  --font-satoshi: 'Satoshi', var(--font-sans), system-ui, -apple-system, sans-serif;
+
+  --radius-badge: 4px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-panel: 16px;
+
+  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #404145;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-satoshi);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography scale utilities matching Section 03 */
+.text-display {
+  font-family: var(--font-grotesque);
+  font-size: 48px;
+  line-height: 56px;
+  font-weight: 700;
+  color: #222325;
+}
+
+.text-h1 {
+  font-family: var(--font-grotesque);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+  color: #222325;
+}
+
+.text-h2 {
+  font-family: var(--font-grotesque);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 700;
+  color: #222325;
+}
+
+.text-h3 {
+  font-family: var(--font-grotesque);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  color: #222325;
+}
+
+.text-body {
+  font-family: var(--font-satoshi);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: #404145;
+}
+
+.text-ui {
+  font-family: var(--font-satoshi);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #404145;
+}
+
+.text-caption {
+  font-family: var(--font-satoshi);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  color: #74767E;
+}
