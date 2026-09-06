@@ -15,12 +15,18 @@ export function VideoSection() {
 
   const togglePlay = () => {
     if (!videoRef.current) return;
-    if (isPlaying) {
+    if (videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.warn("Playback error:", err);
+        });
+    } else {
       videoRef.current.pause();
       setIsPlaying(false);
-    } else {
-      videoRef.current.play();
-      setIsPlaying(true);
     }
   };
 
@@ -93,11 +99,14 @@ export function VideoSection() {
           {/* HTML5 Video Element */}
           <video
             ref={videoRef}
-            src="/videos/success-story.mp4"
-            poster="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1800&q=80"
+            src="/videos/construction.mp4"
+            poster="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1800&q=80"
             playsInline
+            loop
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
             onEnded={() => setIsPlaying(false)}
             onClick={togglePlay}
             className="w-full h-full object-cover cursor-pointer"
