@@ -436,7 +436,7 @@ export function EditBasicInfoModal({
   initialName: string;
   initialHeadline: string;
   initialLanguages: string[];
-  onSave: (data: { displayName: string; headline: string; languages: string[] }) => void;
+  onSave: (data: { displayName: string; headline: string; languages: string[]; trade: string }) => void;
 }) {
   if (!isOpen) return null;
 
@@ -451,6 +451,17 @@ export function EditBasicInfoModal({
   );
 }
 
+const TRADE_CATEGORIES = [
+  "Plumbing",
+  "House Cleaning",
+  "Electrical Repairs",
+  "Painting",
+  "Moving Services",
+  "Furniture Assembly",
+  "Gardening & Lawn Care",
+  "Home Repairs",
+];
+
 function EditBasicInfoForm({
   onClose,
   initialName,
@@ -462,11 +473,28 @@ function EditBasicInfoForm({
   initialName: string;
   initialHeadline: string;
   initialLanguages: string[];
-  onSave: (data: { displayName: string; headline: string; languages: string[] }) => void;
+  onSave: (data: { displayName: string; headline: string; languages: string[]; trade: string }) => void;
 }) {
   const [displayName, setDisplayName] = React.useState(initialName);
+  const [trade, setTrade] = React.useState(() => {
+    const lower = (initialHeadline || "").toLowerCase();
+    if (lower.includes("plumb")) return "Plumbing";
+    if (lower.includes("electr")) return "Electrical Repairs";
+    if (lower.includes("paint")) return "Painting";
+    if (lower.includes("mov")) return "Moving Services";
+    if (lower.includes("furn") || lower.includes("carpent") || lower.includes("assembl")) return "Furniture Assembly";
+    if (lower.includes("garden") || lower.includes("lawn")) return "Gardening & Lawn Care";
+    if (lower.includes("repair") || lower.includes("handyman")) return "Home Repairs";
+    if (lower.includes("clean")) return "House Cleaning";
+    return "Plumbing";
+  });
   const [headline, setHeadline] = React.useState(initialHeadline);
   const [langInput, setLangInput] = React.useState(initialLanguages.join(", "));
+
+  const handleTradeSelect = (selected: string) => {
+    setTrade(selected);
+    setHeadline(selected);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -476,8 +504,9 @@ function EditBasicInfoForm({
       .filter(Boolean);
     onSave({
       displayName: displayName.trim() || "Add display name",
-      headline: headline.trim() || "Home Cleaning Specialist",
+      headline: headline.trim() || trade,
       languages: langs.length > 0 ? langs : ["English", "Twi"],
+      trade,
     });
     onClose();
   };
@@ -505,7 +534,7 @@ function EditBasicInfoForm({
           Edit Profile Information
         </h3>
         <p className="text-[13px] text-[#62646A] mb-5">
-          Update how your name and professional title appear to customers.
+          Update how your name, primary trade, and professional title appear to customers.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -524,13 +553,34 @@ function EditBasicInfoForm({
 
           <div>
             <label className="block text-[13px] font-semibold text-[#222325] mb-1">
-              Professional Headline
+              Primary Trade / Service Category *
+            </label>
+            <select
+              value={trade}
+              onChange={(e) => handleTradeSelect(e.target.value)}
+              className="w-full h-[40px] px-3 rounded-[8px] border border-[#DADBDD] text-[13px] text-[#222325] bg-white focus:outline-none focus:border-[#222325]"
+            >
+              {TRADE_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-[#74767E] mt-1">
+              Changing your trade automatically aligns your onboarding skills and descriptions.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-semibold text-[#222325] mb-1">
+              Professional Headline / Trade Title
             </label>
             <input
               type="text"
               required
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
+              placeholder="e.g. Plumbing, Master Electrician, Deep Cleaning Pro"
               className="w-full h-[40px] px-3 rounded-[8px] border border-[#DADBDD] text-[13px] text-[#222325] focus:outline-none focus:border-[#222325]"
             />
           </div>

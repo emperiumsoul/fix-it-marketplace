@@ -23,28 +23,232 @@ import {
   EditBasicInfoModal,
 } from "./profile-modals";
 
+// Centralized Trade Configuration for all Fix it marketplace categories
+export interface TradeConfig {
+  id: string;
+  label: string;
+  noun: string;
+  defaultHeadline: string;
+  skills: string[];
+  aboutDesc: string;
+  workExpDesc: string;
+  certDesc: string;
+}
+
+export const TRADE_CATALOG: Record<string, TradeConfig> = {
+  plumbing: {
+    id: "plumbing",
+    label: "Plumbing",
+    noun: "plumbing",
+    defaultHeadline: "Plumbing",
+    skills: [
+      "Pipe installation & repair",
+      "Drain clearing & unblocking",
+      "Bathroom fixture fitting",
+    ],
+    aboutDesc:
+      "Share your plumbing experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous plumbing work to help customers understand your experience.",
+    certDesc:
+      "Add any plumbing, safety, or technical certifications you hold.",
+  },
+  cleaning: {
+    id: "cleaning",
+    label: "House Cleaning",
+    noun: "cleaning",
+    defaultHeadline: "Home Cleaning Specialist",
+    skills: ["House cleaning", "Deep cleaning", "Move-out cleaning"],
+    aboutDesc:
+      "Share your cleaning experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous cleaning work to help customers understand your experience.",
+    certDesc:
+      "Add any cleaning, hygiene, or safety certifications you hold.",
+  },
+  electrical: {
+    id: "electrical",
+    label: "Electrical Repairs",
+    noun: "electrical",
+    defaultHeadline: "Electrical Repairs",
+    skills: [
+      "Wiring & socket installation",
+      "Circuit breaker & panel repair",
+      "Lighting & appliance fitting",
+    ],
+    aboutDesc:
+      "Share your electrical experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous electrical work to help customers understand your experience.",
+    certDesc:
+      "Add any electrical, energy commission, or safety certifications you hold.",
+  },
+  painting: {
+    id: "painting",
+    label: "Painting",
+    noun: "painting",
+    defaultHeadline: "Painting",
+    skills: [
+      "Interior wall painting",
+      "Exterior painting & waterproofing",
+      "Surface prep & crack filling",
+    ],
+    aboutDesc:
+      "Share your painting experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous painting work to help customers understand your experience.",
+    certDesc:
+      "Add any painting, safety, or coating certifications you hold.",
+  },
+  moving: {
+    id: "moving",
+    label: "Moving Services",
+    noun: "moving",
+    defaultHeadline: "Moving Services",
+    skills: [
+      "Furniture packing & wrapping",
+      "Loading & transport logistics",
+      "Appliance handling & removal",
+    ],
+    aboutDesc:
+      "Share your moving and relocation experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous moving and logistics work to help customers understand your experience.",
+    certDesc:
+      "Add any driving, cargo handling, or safety certifications you hold.",
+  },
+  furniture: {
+    id: "furniture",
+    label: "Furniture Assembly",
+    noun: "furniture assembly",
+    defaultHeadline: "Furniture Assembly",
+    skills: [
+      "Flat-pack furniture assembly",
+      "Bed & wardrobe installation",
+      "Custom shelf mounting & woodwork",
+    ],
+    aboutDesc:
+      "Share your assembly and carpentry experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous assembly and woodwork experience to help customers.",
+    certDesc:
+      "Add any carpentry, joinery, or safety certifications you hold.",
+  },
+  gardening: {
+    id: "gardening",
+    label: "Gardening & Lawn Care",
+    noun: "gardening",
+    defaultHeadline: "Gardening & Lawn Care",
+    skills: [
+      "Lawn mowing & edge trimming",
+      "Hedge pruning & flowerbed care",
+      "Compound weed clearing & debris hauling",
+    ],
+    aboutDesc:
+      "Share your gardening experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous landscaping and grounds maintenance work.",
+    certDesc:
+      "Add any horticulture, chemical safety, or equipment certifications you hold.",
+  },
+  repairs: {
+    id: "repairs",
+    label: "Home Repairs",
+    noun: "home repair",
+    defaultHeadline: "Home Repairs",
+    skills: [
+      "Door lock & hinge repair",
+      "Wall patching & masonry fixes",
+      "General fixtures & appliance mounting",
+    ],
+    aboutDesc:
+      "Share your home repair experience, the services you offer, and the areas you cover.",
+    workExpDesc:
+      "Add your previous handyman and maintenance work to help customers.",
+    certDesc:
+      "Add any technical or safety certifications you hold.",
+  },
+};
+
+export function detectTradeConfig(input: string): TradeConfig {
+  const lower = (input || "").toLowerCase().trim();
+  if (lower.includes("plumb")) return TRADE_CATALOG.plumbing;
+  if (lower.includes("electr")) return TRADE_CATALOG.electrical;
+  if (lower.includes("paint")) return TRADE_CATALOG.painting;
+  if (lower.includes("mov")) return TRADE_CATALOG.moving;
+  if (
+    lower.includes("furn") ||
+    lower.includes("carpent") ||
+    lower.includes("assembl")
+  )
+    return TRADE_CATALOG.furniture;
+  if (lower.includes("garden") || lower.includes("lawn"))
+    return TRADE_CATALOG.gardening;
+  if (lower.includes("repair") || lower.includes("handyman"))
+    return TRADE_CATALOG.repairs;
+  if (lower.includes("clean")) return TRADE_CATALOG.cleaning;
+
+  // Fallback for custom trades
+  const title = input.trim() || "Plumbing";
+  return {
+    id: "custom",
+    label: title,
+    noun: title.toLowerCase(),
+    defaultHeadline: title,
+    skills: [
+      `${title} Installation & Setup`,
+      `${title} Repairs & Troubleshooting`,
+      `${title} Maintenance & Inspection`,
+    ],
+    aboutDesc: `Share your ${title.toLowerCase()} experience, the services you offer, and the areas you cover.`,
+    workExpDesc: `Add your previous ${title.toLowerCase()} work to help customers understand your experience.`,
+    certDesc: `Add any ${title.toLowerCase()}, technical, or safety certifications you hold.`,
+  };
+}
+
 export function OnboardingProfileView() {
   const router = useRouter();
   const { user } = useUser();
 
-  // Profile fields initialized with sensible defaults matching 6.png
-  const [displayName, setDisplayName] = React.useState("Kingsley");
-  const username = user?.username || (user?.firstName ? user.firstName.toLowerCase() : "ksoul1");
-  const [headline, setHeadline] = React.useState("Home Cleaning Specialist");
-  const [languages, setLanguages] = React.useState<string[]>(["English", "Twi"]);
+  // Initialize display name from user metadata or sensible default
+  const [displayName, setDisplayName] = React.useState("Clear");
+  const username =
+    user?.username || (user?.firstName ? user.firstName.toLowerCase() : "ksoul1");
+
+  // Headline defaults to Plumbing (as depicted in user's state) or user profile
+  const [headline, setHeadline] = React.useState("Plumbing");
+  const [languages, setLanguages] = React.useState<string[]>([
+    "English",
+    "Twi",
+  ]);
   const locationName = "Ghana";
 
-  // Skill experience levels
-  const [skillLevels, setSkillLevels] = React.useState<Record<string, string>>({
-    "House cleaning": "Intermediate",
-    "Deep cleaning": "Set experience level",
-    "Move-out cleaning": "Set experience level",
+  // Dynamic active trade config derived from headline
+  const activeTrade = React.useMemo(
+    () => detectTradeConfig(headline),
+    [headline]
+  );
+
+  // Skill experience levels mapped dynamically per active trade
+  const [skillLevels, setSkillLevels] = React.useState<
+    Record<string, string>
+  >(() => {
+    const initialConfig = detectTradeConfig("Plumbing");
+    const initialMap: Record<string, string> = {};
+    initialConfig.skills.forEach((s) => {
+      initialMap[s] = "Beginner";
+    });
+    return initialMap;
   });
 
   // Optional lists
-  const [workExperiences, setWorkExperiences] = React.useState<WorkExperienceItem[]>([]);
+  const [workExperiences, setWorkExperiences] = React.useState<
+    WorkExperienceItem[]
+  >([]);
   const [educations, setEducations] = React.useState<EducationItem[]>([]);
-  const [certifications, setCertifications] = React.useState<CertificationItem[]>([]);
+  const [certifications, setCertifications] = React.useState<
+    CertificationItem[]
+  >([]);
 
   // Modals state
   const [isEditBasicOpen, setIsEditBasicOpen] = React.useState(false);
@@ -54,14 +258,65 @@ export function OnboardingProfileView() {
 
   const [isSaving, setIsSaving] = React.useState(false);
 
-  // Sync user first/last name if loaded
+  // Sync user profile if loaded
   React.useEffect(() => {
-    if (user?.fullName) {
-      setTimeout(() => setDisplayName(user.fullName!), 0);
-    } else if (user?.firstName) {
-      setTimeout(() => setDisplayName(user.firstName!), 0);
+    if (user?.unsafeMetadata) {
+      const meta = user.unsafeMetadata as {
+        customerName?: string;
+        providerProfile?: {
+          displayName?: string;
+          headline?: string;
+          languages?: string[];
+          skillLevels?: Record<string, string>;
+        };
+      };
+      if (meta.providerProfile?.displayName) {
+        setTimeout(() => setDisplayName(meta.providerProfile!.displayName!), 0);
+      } else if (meta.customerName) {
+        setTimeout(() => setDisplayName(meta.customerName!), 0);
+      } else if (user.fullName) {
+        setTimeout(() => setDisplayName(user.fullName!), 0);
+      } else if (user.firstName) {
+        setTimeout(() => setDisplayName(user.firstName!), 0);
+      }
+
+      if (meta.providerProfile?.headline) {
+        setTimeout(() => {
+          setHeadline(meta.providerProfile!.headline!);
+          const cfg = detectTradeConfig(meta.providerProfile!.headline!);
+          setSkillLevels((prev) => {
+            const next = { ...prev };
+            cfg.skills.forEach((s) => {
+              if (!next[s]) next[s] = "Beginner";
+            });
+            return next;
+          });
+        }, 0);
+      }
     }
-  }, [user?.fullName, user?.firstName]);
+  }, [user]);
+
+  const handleSaveBasicInfo = (data: {
+    displayName: string;
+    headline: string;
+    languages: string[];
+    trade: string;
+  }) => {
+    const newHeadline = data.headline.trim() || data.trade;
+    setDisplayName(data.displayName);
+    setHeadline(newHeadline);
+    setLanguages(data.languages);
+
+    // Update skills to match the new trade
+    const newConfig = detectTradeConfig(newHeadline);
+    setSkillLevels((prev) => {
+      const next: Record<string, string> = {};
+      newConfig.skills.forEach((s) => {
+        next[s] = prev[s] || "Beginner";
+      });
+      return next;
+    });
+  };
 
   const handleSaveAndContinue = async () => {
     setIsSaving(true);
@@ -72,9 +327,12 @@ export function OnboardingProfileView() {
             ...user.unsafeMetadata,
             role: "provider",
             onboardingStatus: "completed",
+            primaryService: activeTrade.label,
             providerProfile: {
               displayName,
               headline,
+              primaryService: activeTrade.label,
+              tradeCategory: activeTrade.id,
               languages,
               location: locationName,
               skillLevels,
@@ -93,6 +351,8 @@ export function OnboardingProfileView() {
           JSON.stringify({
             displayName,
             headline,
+            primaryService: activeTrade.label,
+            tradeCategory: activeTrade.id,
             languages,
             location: locationName,
             skillLevels,
@@ -113,8 +373,8 @@ export function OnboardingProfileView() {
   };
 
   const cycleLevel = (skillName: string) => {
-    const levels = ["Set experience level", "Beginner", "Intermediate", "Expert"];
-    const current = skillLevels[skillName] || "Set experience level";
+    const levels = ["Beginner", "Intermediate", "Expert"];
+    const current = skillLevels[skillName] || "Beginner";
     const nextIdx = (levels.indexOf(current) + 1) % levels.length;
     setSkillLevels((prev) => ({
       ...prev,
@@ -141,41 +401,39 @@ export function OnboardingProfileView() {
         </Link>
       </header>
 
-      {/* Main container */}
-      <main className="flex-1 max-w-[840px] w-full mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        {/* Title and Subtitle matching 6.png */}
-        <div className="text-center mb-8 sm:mb-10">
-          <h1 className="font-grotesque font-bold text-[30px] sm:text-[36px] text-[#222325] leading-tight">
+      {/* Main Review Profile Card matching 6.png */}
+      <main className="flex-1 max-w-[820px] w-full mx-auto px-4 sm:px-6 py-10 flex flex-col gap-8">
+        {/* Page Title & Subtitle */}
+        <div className="text-center">
+          <h1 className="font-grotesque font-bold text-[32px] sm:text-[36px] tracking-tight text-[#222325]">
             Review your new profile
           </h1>
-          <p className="text-[14px] sm:text-[15px] text-[#62646A] mt-2">
+          <p className="text-[14px] text-[#62646A] mt-1.5">
             Add missing details to complete your profile. You can update it at any time.
           </p>
         </div>
 
-        {/* Profile Card Container matching 6.png */}
-        <div className="bg-white rounded-[20px] border border-[#E5E7EB] shadow-xs p-6 sm:p-10 flex flex-col gap-8">
-          {/* Header Profile Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            {/* Avatar with Camera icon */}
-            <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-[#D4D4D8] flex items-center justify-center shrink-0">
-              <div className="w-12 h-12 rounded-full bg-[#A1A1AA] flex items-center justify-center text-white text-[24px] font-bold">
+        {/* Profile Card Container */}
+        <div className="bg-white rounded-[24px] border border-[#E5E7EB] p-6 sm:p-10 shadow-xs flex flex-col gap-8">
+          {/* Header row: Avatar + Name + Headline + Meta */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-[#F3F4F6]">
+            {/* Avatar with Camera Overlay */}
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-[#D4D4D8] text-[#52525B] flex items-center justify-center font-bold text-[28px]">
                 {displayName.charAt(0).toUpperCase()}
               </div>
-
               <button
                 type="button"
-                onClick={() => alert("Photo upload: please select an image for your profile photo.")}
-                aria-label="Upload profile photo"
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-[#DADBDD] text-[#62646A] hover:text-[#222325] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                aria-label="Upload photo"
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-xs flex items-center justify-center text-[#404145] hover:bg-[#F3F4F6] cursor-pointer transition-colors"
               >
                 <Camera className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Profile Info Details */}
-            <div className="flex-1 flex flex-col gap-1.5">
-              <div className="flex flex-wrap items-center gap-2">
+            {/* Profile Identifiers matching 6.png */}
+            <div className="flex flex-col gap-1 w-full">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsEditBasicOpen(true)}
@@ -189,10 +447,11 @@ export function OnboardingProfileView() {
                 </span>
               </div>
 
+              {/* Headline / Trade with Edit Icon */}
               <button
                 type="button"
                 onClick={() => setIsEditBasicOpen(true)}
-                className="text-[14px] sm:text-[15px] text-[#404145] hover:text-[#008744] flex items-center gap-1.5 cursor-pointer text-left transition-colors"
+                className="text-[14px] sm:text-[15px] text-[#404145] hover:text-[#008744] flex items-center gap-1.5 cursor-pointer text-left transition-colors font-medium"
               >
                 <span>{headline}</span>
                 <Edit2 className="w-3.5 h-3.5 text-[#74767E]" />
@@ -217,7 +476,7 @@ export function OnboardingProfileView() {
             </div>
           </div>
 
-          {/* About Section Card matching 6.png */}
+          {/* About Section Card matching 6.png - DYNAMIC BY TRADE */}
           <div className="rounded-[16px] border border-[#E5E7EB] p-6 bg-white flex flex-col gap-5">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -225,7 +484,7 @@ export function OnboardingProfileView() {
                   About
                 </h2>
                 <p className="text-[13px] text-[#62646A] mt-0.5">
-                  Share your cleaning experience, the services you offer, and the areas you cover.
+                  {activeTrade.aboutDesc}
                 </p>
               </div>
 
@@ -245,15 +504,15 @@ export function OnboardingProfileView() {
               </div>
             </div>
 
-            {/* 3 Skill Cards matching 6.png */}
+            {/* 3 Skill Cards matching 6.png - DYNAMIC TRADE SKILLS */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              {["House cleaning", "Deep cleaning", "Move-out cleaning"].map((skill) => (
+              {activeTrade.skills.map((skill) => (
                 <div
                   key={skill}
-                  className="p-3.5 rounded-[12px] border border-[#E5E7EB] bg-white hover:border-[#DADBDD] transition-colors flex flex-col justify-between min-h-[84px]"
+                  className="p-3.5 rounded-[12px] border border-[#E5E7EB] bg-white hover:border-[#222325] transition-colors flex flex-col justify-between min-h-[84px] group"
                 >
                   <div className="flex items-start justify-between">
-                    <span className="font-semibold text-[14px] text-[#222325]">
+                    <span className="font-semibold text-[14px] text-[#222325] leading-snug">
                       {skill}
                     </span>
                     <button
@@ -269,24 +528,24 @@ export function OnboardingProfileView() {
                   <button
                     type="button"
                     onClick={() => cycleLevel(skill)}
-                    className="text-left text-[12px] text-[#74767E] hover:text-[#008744] font-medium transition-colors cursor-pointer mt-2"
+                    className="text-left text-[12px] text-[#74767E] group-hover:text-[#008744] font-medium transition-colors cursor-pointer mt-2"
                   >
-                    {skillLevels[skill] || "Set experience level"}
+                    {skillLevels[skill] || "Beginner"}
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Work experience (Optional) matching 6.png */}
+          {/* Work Experience Section matching 6.png - DYNAMIC BY TRADE */}
           <div className="rounded-[16px] border border-[#E5E7EB] p-6 bg-white flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                  Work experience <span className="font-normal text-[#74767E] text-[15px]">(Optional)</span>
+                <h2 className="font-grotesque font-bold text-[17px] text-[#222325]">
+                  Work experience <span className="font-normal text-[#74767E] text-[14px]">(Optional)</span>
                 </h2>
-                <p className="text-[13px] text-[#62646A] mt-0.5">
-                  Add your previous cleaning work to help customers understand your experience.
+                <p className="text-[13px] text-[#62646A] mt-1 leading-snug">
+                  {activeTrade.workExpDesc}
                 </p>
               </div>
 
@@ -388,14 +647,14 @@ export function OnboardingProfileView() {
               </div>
             </div>
 
-            {/* Certifications */}
+            {/* Certifications - DYNAMIC BY TRADE */}
             <div className="rounded-[16px] border border-[#E5E7EB] p-6 bg-white flex flex-col justify-between gap-4">
               <div>
                 <h2 className="font-grotesque font-bold text-[17px] text-[#222325]">
                   Certifications <span className="font-normal text-[#74767E] text-[14px]">(Optional)</span>
                 </h2>
                 <p className="text-[13px] text-[#62646A] mt-1 leading-snug">
-                  Add any cleaning, hygiene, or safety certifications you hold.
+                  {activeTrade.certDesc}
                 </p>
 
                 {certifications.length > 0 && (
@@ -432,13 +691,13 @@ export function OnboardingProfileView() {
             </div>
           </div>
 
-          {/* Action Row */}
-          <div className="flex justify-end pt-4 border-t border-[#E5E7EB]">
+          {/* Action Button: Save & Continue to Dashboard matching 6.png */}
+          <div className="flex justify-end pt-4 border-t border-[#F3F4F6]">
             <button
               type="button"
               onClick={handleSaveAndContinue}
               disabled={isSaving}
-              className="w-full sm:w-auto px-8 py-3 bg-[#222325] hover:bg-black disabled:opacity-50 text-white font-semibold text-[14px] rounded-[8px] transition-colors shadow-sm cursor-pointer"
+              className="px-6 py-3 rounded-[10px] bg-[#222325] hover:bg-black text-white font-semibold text-[14px] transition-all duration-150 shadow-sm cursor-pointer disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save & Continue to Dashboard"}
             </button>
@@ -453,11 +712,7 @@ export function OnboardingProfileView() {
         initialName={displayName}
         initialHeadline={headline}
         initialLanguages={languages}
-        onSave={(data) => {
-          setDisplayName(data.displayName);
-          setHeadline(data.headline);
-          setLanguages(data.languages);
-        }}
+        onSave={handleSaveBasicInfo}
       />
 
       <WorkExperienceModal

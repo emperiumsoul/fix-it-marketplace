@@ -20,34 +20,144 @@ import {
 } from "lucide-react";
 import { DashboardHeader } from "@/components/provider/dashboard-header";
 import { Footer } from "@/components/navigation/footer";
+import { detectTradeConfig } from "@/components/provider/onboarding-profile-view";
+
+const TRADE_PACKAGES: Record<
+  string,
+  {
+    title: string;
+    desc: string;
+    duration: string;
+    price: number;
+  }[]
+> = {
+  plumbing: [
+    {
+      title: "Routine Pipe & Leak Repair",
+      desc: "Repairing leaking washbasin traps, sink drain sealing, and tap washer replacement.",
+      duration: "~1 to 2 hours",
+      price: 180,
+    },
+    {
+      title: "Drain Snaking & Blockage Clearing",
+      desc: "Mechanical drain snaking of bathroom or kitchen waste lines and grease trap cleanout.",
+      duration: "~2 to 3 hours",
+      price: 350,
+    },
+    {
+      title: "Complete Bathroom / Kitchen Fixture Overhaul",
+      desc: "Installation and pressure testing of new faucets, P-traps, water heater lines, and shutoff valves.",
+      duration: "~4 to 6 hours",
+      price: 650,
+    },
+  ],
+  cleaning: [
+    {
+      title: "Standard Residential Maintenance Clean",
+      desc: "Dusting, vacuuming, floor mopping, kitchen surface degreasing, bathroom wash, and trash disposal.",
+      duration: "~2 to 3 hours",
+      price: 180,
+    },
+    {
+      title: "Intensive Deep Home Cleaning",
+      desc: "Deep limescale scrubbing, kitchen appliance interior cleaning (oven, fridge), window washing, and grout scrub.",
+      duration: "~4 to 6 hours",
+      price: 350,
+    },
+    {
+      title: "Move-In / Move-Out Turnkey Sanitize",
+      desc: "Full property deep sanitize before handover or tenant move-in, including cabinets and disinfection.",
+      duration: "Full day",
+      price: 600,
+    },
+  ],
+  electrical: [
+    {
+      title: "Diagnostic & Socket / Switch Replacement",
+      desc: "Troubleshooting dead circuits, replacing faulty wall sockets, switches, and earth wire checks.",
+      duration: "~1 to 2 hours",
+      price: 160,
+    },
+    {
+      title: "Breaker Panel & Distribution Board Re-balancing",
+      desc: "Diagnosing tripping MCB breakers, load balancing across 3-phase board, and surge protector installation.",
+      duration: "~2 to 4 hours",
+      price: 380,
+    },
+    {
+      title: "Whole-House Lighting & Ceiling Fan Installation",
+      desc: "Wiring and mounting up to 8 lighting points, chandeliers, or energy-efficient ceiling fans.",
+      duration: "~4 to 6 hours",
+      price: 600,
+    },
+  ],
+  painting: [
+    {
+      title: "Single Room Refresh & Minor Crack Patching",
+      desc: "Surface sanding, acrylic primer coat, and 2 finish coats on walls and ceiling of 1 standard room.",
+      duration: "1 day",
+      price: 250,
+    },
+    {
+      title: "Multi-Room Interior Painting (2-3 Bedrooms)",
+      desc: "Comprehensive surface preparation, skimming minor imperfections, and premium washable emulsion paint.",
+      duration: "2 to 3 days",
+      price: 750,
+    },
+    {
+      title: "Exterior Weatherproofing & Perimeter Wall Painting",
+      desc: "Pressure wash wall clean, waterproofing sealant primer, and mold-resistant exterior paint.",
+      duration: "3 to 4 days",
+      price: 1400,
+    },
+  ],
+};
 
 export default function ProviderProfilePage() {
   const { user } = useUser();
 
   const [copied, setCopied] = React.useState(false);
 
-  // Derive provider attributes from metadata or sensible Ghana defaults
+  // Derive provider attributes from metadata or sensible defaults
   const meta = (user?.unsafeMetadata || {}) as {
     displayName?: string;
     headline?: string;
     languages?: string[];
     primaryService?: string;
     startingPriceGhs?: number;
+    providerProfile?: {
+      displayName?: string;
+      headline?: string;
+      primaryService?: string;
+      languages?: string[];
+    };
   };
 
   const displayName =
+    meta.providerProfile?.displayName ||
     meta.displayName ||
     user?.fullName ||
     user?.firstName ||
-    "Kingsley Acheampong";
+    "Clear";
 
   const username =
     user?.username || (user?.firstName ? user.firstName.toLowerCase() : "ksoul1");
 
-  const headline = meta.headline || meta.primaryService || "Home Cleaning & Facility Maintenance Specialist";
+  const rawHeadline =
+    meta.providerProfile?.headline ||
+    meta.headline ||
+    meta.providerProfile?.primaryService ||
+    meta.primaryService ||
+    "Plumbing";
 
-  const languages = meta.languages || ["English", "Twi", "Ga"];
-  const startingPrice = meta.startingPriceGhs || 150;
+  const activeTrade = detectTradeConfig(rawHeadline);
+
+  const headline = rawHeadline;
+  const languages = meta.providerProfile?.languages || meta.languages || ["English", "Twi"];
+  const startingPrice = meta.startingPriceGhs || (activeTrade.id === "plumbing" ? 180 : 150);
+
+  const packages =
+    TRADE_PACKAGES[activeTrade.id] || TRADE_PACKAGES.plumbing;
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -165,10 +275,10 @@ export default function ProviderProfilePage() {
             {/* About Section */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs">
               <h2 className="font-grotesque font-bold text-[18px] text-[#222325] mb-3">
-                About Kingsley
+                About {displayName}
               </h2>
               <p className="text-[14px] text-[#404145] leading-relaxed">
-                Professional service provider dedicated to delivering thorough, reliable residential and commercial maintenance across Greater Accra. Equipped with industrial cleaning machinery, certified eco-friendly sanitizers, and comprehensive technical training. Known for punctuality, attention to detail, and transparent pricing in Ghana Cedis.
+                Professional {activeTrade.label.toLowerCase()} specialist dedicated to delivering thorough, reliable services across Greater Accra. Equipped with professional tools, certified materials, and comprehensive technical training. Known for punctuality, attention to detail, and transparent pricing in Ghana Cedis.
               </p>
 
               {/* Highlights */}
@@ -179,7 +289,7 @@ export default function ProviderProfilePage() {
                 </div>
                 <div className="flex items-center gap-2 text-[13px] text-[#222325]">
                   <CheckCircle2 className="w-4 h-4 text-[#008744]" />
-                  <span>Supplies and protective gear provided</span>
+                  <span>Tools and standard equipment provided</span>
                 </div>
                 <div className="flex items-center gap-2 text-[13px] text-[#222325]">
                   <CheckCircle2 className="w-4 h-4 text-[#008744]" />
@@ -187,7 +297,7 @@ export default function ProviderProfilePage() {
                 </div>
                 <div className="flex items-center gap-2 text-[13px] text-[#222325]">
                   <CheckCircle2 className="w-4 h-4 text-[#008744]" />
-                  <span>Free re-clean / touch-up within 24 hours</span>
+                  <span>Free inspection & follow-up within 24 hours</span>
                 </div>
               </div>
             </div>
@@ -195,73 +305,40 @@ export default function ProviderProfilePage() {
             {/* Services & Packages Offered */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">
               <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                Services & Packages Offered
+                Services & Packages Offered ({activeTrade.label})
               </h2>
 
               <div className="space-y-4">
-                <div className="p-4 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-grotesque font-bold text-[15px] text-[#222325]">
-                      Standard Residential Maintenance Clean
-                    </h3>
-                    <p className="text-[13px] text-[#62646A] mt-0.5 max-w-lg">
-                      Dusting, vacuuming, floor mopping, kitchen surface degreasing, bathroom wash, and trash disposal.
-                    </p>
-                    <span className="inline-block text-[12px] text-[#74767E] mt-1 font-medium">
-                      Duration: ~2 to 3 hours
-                    </span>
+                {packages.map((pkg, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div>
+                      <h3 className="font-grotesque font-bold text-[15px] text-[#222325]">
+                        {pkg.title}
+                      </h3>
+                      <p className="text-[13px] text-[#62646A] mt-0.5 max-w-lg">
+                        {pkg.desc}
+                      </p>
+                      <span className="inline-block text-[12px] text-[#74767E] mt-1 font-medium">
+                        Duration: {pkg.duration}
+                      </span>
+                    </div>
+                    <div className="shrink-0 text-left sm:text-right">
+                      <span className="font-grotesque font-bold text-[18px] text-[#222325]">
+                        GHS {pkg.price}
+                      </span>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-left sm:text-right">
-                    <span className="font-grotesque font-bold text-[18px] text-[#222325]">
-                      GHS 180
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-grotesque font-bold text-[15px] text-[#222325]">
-                      Intensive Deep Home Cleaning
-                    </h3>
-                    <p className="text-[13px] text-[#62646A] mt-0.5 max-w-lg">
-                      Deep limescale scrubbing, kitchen appliance interior cleaning (oven, fridge), window washing, and grout scrub.
-                    </p>
-                    <span className="inline-block text-[12px] text-[#74767E] mt-1 font-medium">
-                      Duration: ~4 to 6 hours
-                    </span>
-                  </div>
-                  <div className="shrink-0 text-left sm:text-right">
-                    <span className="font-grotesque font-bold text-[18px] text-[#222325]">
-                      GHS 350
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-grotesque font-bold text-[15px] text-[#222325]">
-                      Move-In / Move-Out Turnkey Sanitize
-                    </h3>
-                    <p className="text-[13px] text-[#62646A] mt-0.5 max-w-lg">
-                      Full property deep sanitize before handover or tenant move-in, including cabinets and disinfection.
-                    </p>
-                    <span className="inline-block text-[12px] text-[#74767E] mt-1 font-medium">
-                      Duration: Full day
-                    </span>
-                  </div>
-                  <div className="shrink-0 text-left sm:text-right">
-                    <span className="font-grotesque font-bold text-[18px] text-[#222325]">
-                      GHS 600
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
             {/* Portfolio Showcase */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">
               <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                Portfolio Showcase
+                Portfolio Showcase ({activeTrade.label})
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -269,7 +346,7 @@ export default function ProviderProfilePage() {
                   <div className="h-44 bg-[#F3F4F6] relative overflow-hidden">
                     <Image
                       src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80"
-                      alt="Living room cleaning project"
+                      alt="Project demonstration"
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -277,10 +354,10 @@ export default function ProviderProfilePage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-grotesque font-bold text-[14px] text-[#222325]">
-                      Modern Apartment Deep Clean in Cantonments
+                      Residential Project in Cantonments
                     </h3>
                     <p className="text-[12px] text-[#62646A] mt-1">
-                      Post-renovation dust extraction and wood flooring shine restoration.
+                      Completed execution and quality assurance check.
                     </p>
                   </div>
                 </div>
@@ -289,7 +366,7 @@ export default function ProviderProfilePage() {
                   <div className="h-44 bg-[#F3F4F6] relative overflow-hidden">
                     <Image
                       src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80"
-                      alt="Commercial office cleaning project"
+                      alt="Commercial project demonstration"
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -297,10 +374,10 @@ export default function ProviderProfilePage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-grotesque font-bold text-[14px] text-[#222325]">
-                      Corporate Workspace Sanitization in Airport City
+                      Commercial Facility Service in Airport City
                     </h3>
                     <p className="text-[12px] text-[#62646A] mt-1">
-                      Multi-station desk sterilization, glass partitions polish, and carpet wash.
+                      Multi-zone maintenance and technical certification handover.
                     </p>
                   </div>
                 </div>
@@ -320,11 +397,11 @@ export default function ProviderProfilePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-[14px] text-[#222325]">
-                      Lead Facility Technician • Prime Clean Ghana Ltd
+                      Lead {activeTrade.label} Technician • Accra Technical Services
                     </h3>
                     <p className="text-[12px] text-[#74767E]">2021 – Present • 3+ years</p>
                     <p className="text-[13px] text-[#62646A] mt-1">
-                      Managed residential deep clean operations and client sanitation standards.
+                      Managed residential operations and client quality standards across Greater Accra.
                     </p>
                   </div>
                 </div>
@@ -335,9 +412,9 @@ export default function ProviderProfilePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-[14px] text-[#222325]">
-                      Occupational Health & Hygiene Standards Certificate
+                      Certified {activeTrade.label} Standards & Safety Certificate
                     </h3>
-                    <p className="text-[12px] text-[#74767E]">Ghana Environmental Health Directorate • Verified</p>
+                    <p className="text-[12px] text-[#74767E]">National Vocational Training Institute (NVTI) • Verified</p>
                   </div>
                 </div>
               </div>
