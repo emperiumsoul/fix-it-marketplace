@@ -1,6 +1,9 @@
+"use client";
+
 import * as React from "react";
 import Link from "next/link";
 import { MapPin, Users, Calendar, ShieldCheck } from "lucide-react";
+import { SignUpButton, Show } from "@clerk/nextjs";
 
 export function ValueProps() {
   const props = [
@@ -34,12 +37,26 @@ export function ValueProps() {
           <h2 className="font-grotesque font-bold text-[24px] sm:text-[30px] leading-[38px] text-[#222325]">
             Make it all happen with local professionals
           </h2>
-          <Link
-            href="#join"
-            className="inline-flex items-center justify-center bg-[#222325] hover:bg-black text-white text-[14px] font-medium h-[40px] px-5 rounded-[8px] transition-colors shrink-0"
-          >
-            Join now
-          </Link>
+
+          <Show when="signed-out">
+            <SignUpButton mode="modal">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center bg-[#222325] hover:bg-black text-white text-[14px] font-medium h-[40px] px-5 rounded-[8px] transition-colors shrink-0 cursor-pointer"
+              >
+                Join now
+              </button>
+            </SignUpButton>
+          </Show>
+
+          <Show when="signed-in">
+            <Link
+              href="/search"
+              className="inline-flex items-center justify-center bg-[#222325] hover:bg-black text-white text-[14px] font-medium h-[40px] px-5 rounded-[8px] transition-colors shrink-0"
+            >
+              Explore Services
+            </Link>
+          </Show>
         </div>
 
         {/* 4 Feature Columns */}

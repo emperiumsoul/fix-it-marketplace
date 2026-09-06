@@ -1,5 +1,8 @@
+"use client";
+
 import * as React from "react";
 import Link from "next/link";
+import { SignUpButton, Show } from "@clerk/nextjs";
 
 export function CtaBanner() {
   return (
@@ -13,12 +16,25 @@ export function CtaBanner() {
             </span>
           </h2>
 
-          <Link
-            href="#join"
-            className="inline-flex items-center justify-center bg-white hover:bg-[#F3FDF9] text-[#222325] font-semibold text-[15px] h-[46px] px-8 rounded-[8px] shadow-sm transition-all hover:scale-105"
-          >
-            Join Fix it
-          </Link>
+          <Show when="signed-out">
+            <SignUpButton mode="modal">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center bg-white hover:bg-[#F3FDF9] text-[#222325] font-semibold text-[15px] h-[46px] px-8 rounded-[8px] shadow-sm transition-all hover:scale-105 cursor-pointer"
+              >
+                Join Fix it
+              </button>
+            </SignUpButton>
+          </Show>
+
+          <Show when="signed-in">
+            <Link
+              href="/search"
+              className="inline-flex items-center justify-center bg-white hover:bg-[#F3FDF9] text-[#222325] font-semibold text-[15px] h-[46px] px-8 rounded-[8px] shadow-sm transition-all hover:scale-105"
+            >
+              Explore Services
+            </Link>
+          </Show>
         </div>
       </div>
     </section>
