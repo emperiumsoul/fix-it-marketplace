@@ -11,7 +11,9 @@ import {
   ExternalLink,
   ShieldCheck,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 
 function generateId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).substring(2, 9)}`;
@@ -157,6 +159,7 @@ export function MessagingView() {
 }
 
 function MessagingViewContent() {
+  const { isLoaded, isSignedIn } = useUser();
   const searchParams = useSearchParams();
   const targetProvider = searchParams.get("to");
   const targetService = searchParams.get("service");
@@ -310,6 +313,40 @@ function MessagingViewContent() {
       t.providerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.serviceTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="bg-white rounded-[16px] border border-[#DADBDD] p-8 sm:p-12 text-center max-w-[560px] mx-auto shadow-xs my-8">
+        <div className="w-16 h-16 rounded-full bg-[#EBF7EE] text-[#008744] flex items-center justify-center mx-auto mb-4">
+          <MessageSquare className="w-8 h-8 stroke-[2]" />
+        </div>
+        <h2 className="text-[22px] font-bold text-[#222325] mb-2">
+          Sign in to access your messages
+        </h2>
+        <p className="text-[14px] text-[#62646A] leading-relaxed mb-6">
+          Connect directly with verified service technicians, coordinate appointment details, and discuss project scopes.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <SignInButton mode="modal">
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-[#222325] hover:bg-black text-white font-semibold text-[14px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-[#008744] hover:bg-[#007038] text-white font-semibold text-[14px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Join Fix it
+            </button>
+          </SignUpButton>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-[16px] border border-[#DADBDD] shadow-sm overflow-hidden flex flex-col md:flex-row h-[740px]">

@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Heart, Search, ArrowRight, Trash2 } from "lucide-react";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { ServiceCard } from "@/components/cards/service-card";
 
 export interface SavedServiceItem {
@@ -66,6 +67,7 @@ const DEFAULT_SAVED_SERVICES: SavedServiceItem[] = [
 ];
 
 export function SavedView() {
+  const { isLoaded, isSignedIn } = useUser();
   const [savedServices, setSavedServices] = React.useState<SavedServiceItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -110,6 +112,40 @@ export function SavedView() {
       window.dispatchEvent(new Event("fixit_saved_updated"));
     }
   };
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="bg-white rounded-[16px] border border-[#DADBDD] p-8 sm:p-12 text-center max-w-[560px] mx-auto shadow-xs my-8">
+        <div className="w-16 h-16 rounded-full bg-[#FEE4E2] text-[#B42318] flex items-center justify-center mx-auto mb-4">
+          <Heart className="w-8 h-8 fill-[#B42318]" />
+        </div>
+        <h2 className="text-[22px] font-bold text-[#222325] mb-2">
+          Sign in to view your saved services
+        </h2>
+        <p className="text-[14px] text-[#62646A] leading-relaxed mb-6">
+          Save your favorite Ghanaian plumbers, cleaners, electricians, and painters to quickly compare and book them when ready.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <SignInButton mode="modal">
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-[#222325] hover:bg-black text-white font-semibold text-[14px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-[#008744] hover:bg-[#007038] text-white font-semibold text-[14px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Join Fix it
+            </button>
+          </SignUpButton>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

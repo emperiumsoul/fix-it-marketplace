@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 import {
   Calendar,
   Clock,
@@ -112,6 +113,7 @@ const INITIAL_CUSTOMER_BOOKINGS: CustomerBooking[] = [
 
 export function BookingsView() {
   const router = useRouter();
+  const { isLoaded, isSignedIn } = useUser();
 
   const [bookings, setBookings] = React.useState<CustomerBooking[]>(() => {
     if (typeof window !== "undefined") {
@@ -217,6 +219,40 @@ export function BookingsView() {
         );
     }
   };
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="bg-white rounded-[16px] border border-[#DADBDD] p-8 sm:p-12 text-center max-w-[560px] mx-auto shadow-xs my-8">
+        <div className="w-16 h-16 rounded-full bg-[#EBF7EE] text-[#008744] flex items-center justify-center mx-auto mb-4">
+          <Calendar className="w-8 h-8 stroke-[2]" />
+        </div>
+        <h2 className="text-[22px] font-bold text-[#222325] mb-2">
+          Sign in to view your bookings
+        </h2>
+        <p className="text-[14px] text-[#62646A] leading-relaxed mb-6">
+          Access your scheduled appointments, track live job status with service providers, and manage your orders.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <SignInButton mode="modal">
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-[#222325] hover:bg-black text-white font-semibold text-[14px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button
+              type="button"
+              className="px-6 py-2.5 bg-[#008744] hover:bg-[#007038] text-white font-semibold text-[14px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Join Fix it
+            </button>
+          </SignUpButton>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">

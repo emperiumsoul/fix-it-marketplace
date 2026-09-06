@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, MapPin, Star } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 export interface ServiceCardProps {
   id?: string;
@@ -72,9 +73,19 @@ export function ServiceCard({
     return () => window.removeEventListener("fixit_saved_updated", handleStorageUpdate);
   }, [itemKey]);
 
+  const { isSignedIn } = useUser();
+  const clerk = useClerk();
+
   const handleToggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Favorites only work when logged in: open Clerk sign-in modal if guest
+    if (!isSignedIn) {
+      clerk.openSignIn();
+      return;
+    }
+
     const nextSaved = !saved;
     setSaved(nextSaved);
 

@@ -168,33 +168,35 @@ export function PublicHeader({
             Become a Provider
           </button>
 
-          {/* Quick utility icons matching 4.png */}
-          <div className="flex items-center gap-3 text-[#62646A] border-l border-[#E5E7EB] pl-4">
-            <HeaderNotifications />
-            
-            <Link
-              href="/messages"
-              aria-label="Messages"
-              className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
-            >
-              <Mail className="w-4 h-4" />
-            </Link>
+          <Show when="signed-in">
+            {/* Quick utility icons matching 4.png (only for authenticated users) */}
+            <div className="flex items-center gap-3 text-[#62646A] border-l border-[#E5E7EB] pl-4">
+              <HeaderNotifications />
+              
+              <Link
+                href="/messages"
+                aria-label="Messages"
+                className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
+              >
+                <Mail className="w-4 h-4" />
+              </Link>
 
-            <Link
-              href="/saved"
-              aria-label="Saved services"
-              className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
-            >
-              <Heart className="w-4 h-4" />
-            </Link>
+              <Link
+                href="/saved"
+                aria-label="Saved services"
+                className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
+              >
+                <Heart className="w-4 h-4" />
+              </Link>
 
-            <Link
-              href="/bookings"
-              className="hover:text-[#008744] transition-colors text-[14px] font-medium ml-1"
-            >
-              Bookings
-            </Link>
-          </div>
+              <Link
+                href="/bookings"
+                className="hover:text-[#008744] transition-colors text-[14px] font-medium ml-1"
+              >
+                Bookings
+              </Link>
+            </div>
+          </Show>
 
           {/* Language Selector */}
           <LanguageSelector />
@@ -268,27 +270,29 @@ export function PublicHeader({
           >
             Become a Provider
           </button>
-          <Link
-            href="/bookings"
-            onClick={() => setMobileMenuOpen(false)}
-            className="py-1.5 hover:text-[#008744]"
-          >
-            My Bookings & Orders
-          </Link>
-          <Link
-            href="/messages"
-            onClick={() => setMobileMenuOpen(false)}
-            className="py-1.5 hover:text-[#008744]"
-          >
-            Messages & Chat
-          </Link>
-          <Link
-            href="/saved"
-            onClick={() => setMobileMenuOpen(false)}
-            className="py-1.5 hover:text-[#008744]"
-          >
-            Saved Services
-          </Link>
+          <Show when="signed-in">
+            <Link
+              href="/bookings"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#008744]"
+            >
+              My Bookings & Orders
+            </Link>
+            <Link
+              href="/messages"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#008744]"
+            >
+              Messages & Chat
+            </Link>
+            <Link
+              href="/saved"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#008744]"
+            >
+              Saved Services
+            </Link>
+          </Show>
           <Link
             href="/search"
             onClick={() => setMobileMenuOpen(false)}
