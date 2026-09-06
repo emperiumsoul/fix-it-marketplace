@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ChevronDown, Globe, Menu, X } from "lucide-react";
+import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 
 export function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -61,19 +62,29 @@ export function PublicHeader() {
             Become a Provider
           </Link>
 
-          <Link
-            href="#sign-in"
-            className="hover:text-[#222325] transition-colors"
-          >
-            Sign in
-          </Link>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="hover:text-[#222325] transition-colors font-medium text-[14px] cursor-pointer"
+              >
+                Sign in
+              </button>
+            </SignInButton>
 
-          <Link
-            href="#join"
-            className="inline-flex items-center justify-center bg-[#222325] text-white text-[14px] font-medium h-[38px] px-5 rounded-[8px] hover:bg-black transition-colors"
-          >
-            Join
-          </Link>
+            <SignUpButton mode="modal">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center bg-[#222325] text-white text-[14px] font-medium h-[38px] px-5 rounded-[8px] hover:bg-black transition-colors cursor-pointer"
+              >
+                Join
+              </button>
+            </SignUpButton>
+          </Show>
+
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -118,22 +129,34 @@ export function PublicHeader() {
           >
             Become a Provider
           </Link>
-          <div className="flex items-center gap-3 pt-3 border-t border-[#DADBDD]">
-            <Link
-              href="#sign-in"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 py-2 text-center border border-[#DADBDD] rounded-[8px] hover:bg-[#F7F7F7]"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="#join"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 py-2 text-center bg-[#222325] text-white rounded-[8px] hover:bg-black"
-            >
-              Join
-            </Link>
-          </div>
+          <Show when="signed-out">
+            <div className="flex items-center gap-3 pt-3 border-t border-[#DADBDD]">
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 py-2 text-center border border-[#DADBDD] rounded-[8px] hover:bg-[#F7F7F7] font-medium text-[14px] cursor-pointer"
+                >
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 py-2 text-center bg-[#222325] text-white rounded-[8px] hover:bg-black font-medium text-[14px] cursor-pointer"
+                >
+                  Join
+                </button>
+              </SignUpButton>
+            </div>
+          </Show>
+          <Show when="signed-in">
+            <div className="flex items-center justify-between pt-3 border-t border-[#DADBDD]">
+              <span className="text-[14px] font-medium text-[#404145]">Account</span>
+              <UserButton />
+            </div>
+          </Show>
         </div>
       )}
     </header>

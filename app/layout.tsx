@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${grotesque.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#404145]">
-        {children}
+        <ClerkProvider>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );
