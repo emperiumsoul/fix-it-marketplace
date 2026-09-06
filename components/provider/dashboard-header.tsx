@@ -5,11 +5,21 @@ import Link from "next/link";
 import { ChevronDown, Bell, Mail, HelpCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
-export function DashboardHeader() {
+export interface DashboardHeaderProps {
+  activeTab?: "overview" | "orders" | "earnings";
+  onSelectTab?: (tab: "overview" | "orders" | "earnings") => void;
+}
+
+export function DashboardHeader({ activeTab = "overview", onSelectTab }: DashboardHeaderProps) {
   const { user } = useUser();
   const initial = (user?.firstName || user?.username || "K").charAt(0).toUpperCase();
 
   const [activeMenu, setActiveMenu] = React.useState<string | null>(null);
+
+  const handleTabClick = (tab: "overview" | "orders" | "earnings") => {
+    setActiveMenu(null);
+    onSelectTab?.(tab);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-[#E5E7EB] backdrop-blur-md">
@@ -27,8 +37,13 @@ export function DashboardHeader() {
           {/* Nav Links matching 7.png */}
           <nav className="hidden md:flex items-center gap-6 text-[14px] font-medium text-[#404145]">
             <Link
-              href="/provider/dashboard"
-              className="text-[#222325] font-semibold hover:text-black transition-colors"
+              href="/provider/dashboard?tab=overview"
+              onClick={() => handleTabClick("overview")}
+              className={`transition-colors ${
+                activeTab === "overview"
+                  ? "text-[#222325] font-semibold border-b-2 border-[#222325] pb-0.5"
+                  : "hover:text-black"
+              }`}
             >
               Dashboard
             </Link>
@@ -45,27 +60,27 @@ export function DashboardHeader() {
               </button>
 
               {activeMenu === "business" && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-[#E5E7EB] rounded-[10px] shadow-lg py-1.5 z-50 text-[13px]">
+                <div className="absolute top-full left-0 mt-2 w-52 bg-white border border-[#E5E7EB] rounded-[10px] shadow-lg py-1.5 z-50 text-[13px]">
                   <Link
-                    href="/provider/dashboard"
+                    href="/provider/profile"
                     onClick={() => setActiveMenu(null)}
+                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#008744] font-semibold"
+                  >
+                    View Public Profile →
+                  </Link>
+                  <Link
+                    href="/provider/onboarding"
+                    onClick={() => setActiveMenu(null)}
+                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
+                  >
+                    Edit Profile Details
+                  </Link>
+                  <Link
+                    href="/provider/dashboard?tab=overview"
+                    onClick={() => handleTabClick("overview")}
                     className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
                   >
                     Services & Packages
-                  </Link>
-                  <Link
-                    href="/provider/dashboard"
-                    onClick={() => setActiveMenu(null)}
-                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
-                  >
-                    Profile & Portfolio
-                  </Link>
-                  <Link
-                    href="/provider/dashboard"
-                    onClick={() => setActiveMenu(null)}
-                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
-                  >
-                    Service Areas
                   </Link>
                 </div>
               )}
@@ -76,31 +91,33 @@ export function DashboardHeader() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "bookings" ? null : "bookings")}
-                className="flex items-center gap-1 hover:text-[#222325] transition-colors cursor-pointer"
+                className={`flex items-center gap-1 transition-colors cursor-pointer ${
+                  activeTab === "orders" ? "text-[#222325] font-semibold" : "hover:text-[#222325]"
+                }`}
               >
                 <span>Bookings</span>
                 <ChevronDown className="w-3.5 h-3.5 text-[#74767E]" />
               </button>
 
               {activeMenu === "bookings" && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-[#E5E7EB] rounded-[10px] shadow-lg py-1.5 z-50 text-[13px]">
+                <div className="absolute top-full left-0 mt-2 w-52 bg-white border border-[#E5E7EB] rounded-[10px] shadow-lg py-1.5 z-50 text-[13px]">
                   <Link
-                    href="/provider/dashboard"
-                    onClick={() => setActiveMenu(null)}
-                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
+                    href="/provider/dashboard?tab=orders"
+                    onClick={() => handleTabClick("orders")}
+                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325] font-semibold"
                   >
-                    Active Requests (3)
+                    Orders Received (All)
                   </Link>
                   <Link
-                    href="/provider/dashboard"
-                    onClick={() => setActiveMenu(null)}
+                    href="/provider/dashboard?tab=orders&status=requested"
+                    onClick={() => handleTabClick("orders")}
                     className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
                   >
-                    Upcoming Scheduled
+                    Active Requests
                   </Link>
                   <Link
-                    href="/provider/dashboard"
-                    onClick={() => setActiveMenu(null)}
+                    href="/provider/dashboard?tab=orders&status=completed"
+                    onClick={() => handleTabClick("orders")}
                     className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
                   >
                     Completed Jobs
@@ -114,23 +131,32 @@ export function DashboardHeader() {
               <button
                 type="button"
                 onClick={() => setActiveMenu(activeMenu === "earnings" ? null : "earnings")}
-                className="flex items-center gap-1 hover:text-[#222325] transition-colors cursor-pointer"
+                className={`flex items-center gap-1 transition-colors cursor-pointer ${
+                  activeTab === "earnings" ? "text-[#222325] font-semibold" : "hover:text-[#222325]"
+                }`}
               >
                 <span>Earnings</span>
                 <ChevronDown className="w-3.5 h-3.5 text-[#74767E]" />
               </button>
 
               {activeMenu === "earnings" && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-[#E5E7EB] rounded-[10px] shadow-lg py-1.5 z-50 text-[13px]">
-                  <div className="px-4 py-2 text-[#74767E]">
-                    Available Balance: <span className="font-bold text-[#008744]">GH₵0.00</span>
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-[#E5E7EB] rounded-[10px] shadow-lg py-1.5 z-50 text-[13px]">
+                  <div className="px-4 py-2 text-[#74767E] bg-[#FAFAFA]">
+                    Available: <span className="font-bold text-[#008744]">GHS 882.00</span>
                   </div>
                   <Link
-                    href="/provider/dashboard"
-                    onClick={() => setActiveMenu(null)}
-                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325] border-t border-[#F3F4F6]"
+                    href="/provider/dashboard?tab=earnings"
+                    onClick={() => handleTabClick("earnings")}
+                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325] font-semibold border-t border-[#F3F4F6]"
                   >
-                    Payout Settings (Mobile Money)
+                    Earnings & Payouts Statement
+                  </Link>
+                  <Link
+                    href="/provider/dashboard?tab=earnings"
+                    onClick={() => handleTabClick("earnings")}
+                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
+                  >
+                    Mobile Money Wallet Settings
                   </Link>
                 </div>
               )}

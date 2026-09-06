@@ -41,7 +41,7 @@ export function DashboardProfileBanner() {
 
               {/* View profile link */}
               <Link
-                href="/provider/onboarding"
+                href="/provider/profile"
                 className="text-[13px] text-[#222325] font-semibold underline hover:text-[#008744] transition-colors ml-1"
               >
                 View profile

@@ -14,6 +14,19 @@ export interface PersonalizedHomepageProps {
   initialUserName?: string;
 }
 
+function getNameFromEmail(email?: string): string {
+  if (!email) return "";
+  const localPart = email.split("@")[0] || "";
+  const cleaned = localPart
+    .replace(/[0-9._-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+  return cleaned || localPart;
+}
+
 export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepageProps) {
   const { isLoaded, isSignedIn, user } = useUser();
   const searchParams = useSearchParams();
@@ -52,12 +65,21 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
   // Can dismiss only if the user already has a recognized role
   const canDismiss = hasRole || userForcedOpen;
 
-  // Derive personalized display name
+  // Derive personalized display name from email or user profile
+  const primaryEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress;
+  const emailDerivedName = getNameFromEmail(primaryEmail);
+
+  const customMetadataName = (user?.unsafeMetadata as { customerName?: string } | undefined)?.customerName;
+
   const userName =
+    emailDerivedName ||
+    customMetadataName ||
     user?.firstName ||
     user?.username ||
     initialUserName ||
-    "Kingsley";
+    "Friend";
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#404145] font-satoshi selection:bg-[#F3FDF9] selection:text-[#003912]">

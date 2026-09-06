@@ -33,10 +33,28 @@ export function RoleModal({
     setIsSubmitting(true);
     try {
       if (user) {
+        const primaryEmail =
+          user.primaryEmailAddress?.emailAddress ||
+          user.emailAddresses?.[0]?.emailAddress;
+        let derivedName = "";
+        if (primaryEmail) {
+          const localPart = primaryEmail.split("@")[0] || "";
+          derivedName = localPart
+            .replace(/[0-9._-]+/g, " ")
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(" ");
+        }
+
         await user.update({
           unsafeMetadata: {
             ...user.unsafeMetadata,
             role: selectedRole,
+            ...(selectedRole === "customer" && derivedName
+              ? { customerName: derivedName }
+              : {}),
           },
         });
       }

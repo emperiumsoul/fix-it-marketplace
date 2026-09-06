@@ -12,7 +12,7 @@ import {
   Mail,
   Heart,
 } from "lucide-react";
-import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, Show, UserButton, useUser } from "@clerk/nextjs";
 
 export interface PublicHeaderProps {
   initialQuery?: string;
@@ -24,8 +24,31 @@ export function PublicHeader({
   showSearch = true,
 }: PublicHeaderProps) {
   const router = useRouter();
+  const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState(initialQuery);
+
+  const handleBecomeProvider = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (user) {
+      try {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            role: "provider",
+          },
+        });
+      } catch (err) {
+        console.error("Failed to set provider role", err);
+      }
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fixit_role", "provider");
+      localStorage.setItem("fixit_role_modal_dismissed", "true");
+    }
+    setMobileMenuOpen(false);
+    router.push("/provider/onboarding");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,12 +97,13 @@ export function PublicHeader({
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-5 text-[14px] leading-[20px] font-medium text-[#404145]">
-          <Link
-            href="#become-a-provider"
-            className="hover:text-[#008744] transition-colors text-[13px] font-semibold text-[#008744] shrink-0"
+          <button
+            type="button"
+            onClick={handleBecomeProvider}
+            className="hover:text-[#008744] transition-colors text-[13px] font-semibold text-[#008744] shrink-0 cursor-pointer"
           >
             Become a Provider
-          </Link>
+          </button>
 
           {/* Quick utility icons matching 4.png */}
           <div className="flex items-center gap-3.5 text-[#62646A] border-l border-[#E5E7EB] pl-4">
@@ -179,13 +203,13 @@ export function PublicHeader({
             </div>
           </form>
 
-          <Link
-            href="#become-a-provider"
-            onClick={() => setMobileMenuOpen(false)}
-            className="py-1.5 text-[#008744] font-semibold"
+          <button
+            type="button"
+            onClick={handleBecomeProvider}
+            className="py-1.5 text-[#008744] font-semibold text-left cursor-pointer"
           >
             Become a Provider
-          </Link>
+          </button>
           <Link
             href="#bookings"
             onClick={() => setMobileMenuOpen(false)}
