@@ -18,7 +18,7 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
   const { user } = useUser();
   const searchParams = useSearchParams();
 
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(true);
 
   // Derive personalized display name
   const userName =
@@ -28,12 +28,12 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
     "Kingsley";
 
   React.useEffect(() => {
-    // Check if modal should open automatically on first visit or query parameter
+    // If user has already selected role and modal is not explicitly requested via query param
     if (typeof window !== "undefined") {
       const forceModal = searchParams?.get("modal") === "true";
       const dismissed = localStorage.getItem("fixit_role_modal_dismissed");
-      if (forceModal || !dismissed) {
-        const timer = setTimeout(() => setIsModalOpen(true), 0);
+      if (!forceModal && dismissed === "true") {
+        const timer = setTimeout(() => setIsModalOpen(false), 0);
         return () => clearTimeout(timer);
       }
     }

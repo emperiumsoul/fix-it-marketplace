@@ -1,6 +1,5 @@
 import * as React from "react";
 import { currentUser } from "@clerk/nextjs/server";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { PublicHeader } from "@/components/navigation/public-header";
 import { Hero } from "@/components/home/hero";
 import { CategoryStrip } from "@/components/home/category-strip";
@@ -27,44 +26,52 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     console.error("Clerk currentUser error:", err);
   }
 
-  const isPreview =
+  const isWelcomePreview =
     sp.preview === "welcome" ||
     sp.preview === "signed-in" ||
     sp.modal === "true";
 
-  if (isPreview) {
-    return <PersonalizedHomepage initialUserName="Kingsley" />;
+  const isPublicPreview = sp.preview === "public" || sp.public === "true";
+
+  // If user explicitly asks for public preview, render public homepage (1.png)
+  if (isPublicPreview) {
+    return renderPublicHomepage();
   }
 
+  // If user is authenticated via Clerk or requesting welcome preview, render (3.png + 2.png)
+  if (user || isWelcomePreview) {
+    return (
+      <PersonalizedHomepage
+        initialUserName={user?.firstName || user?.username || undefined}
+      />
+    );
+  }
+
+  // Default signed-out state: Public Homepage (matching 1.png)
+  return renderPublicHomepage();
+}
+
+function renderPublicHomepage() {
   return (
-    <>
-      <SignedIn>
-        <PersonalizedHomepage
-          initialUserName={user?.firstName || user?.username || undefined}
-        />
-      </SignedIn>
-      <SignedOut>
-        <div className="min-h-screen flex flex-col bg-white text-[#404145] font-satoshi selection:bg-[#F3FDF9] selection:text-[#003912]">
-          {/* Top Navigation */}
-          <PublicHeader />
+    <div className="min-h-screen flex flex-col bg-white text-[#404145] font-satoshi selection:bg-[#F3FDF9] selection:text-[#003912]">
+      {/* Top Navigation */}
+      <PublicHeader />
 
-          {/* Main Public Homepage Flow (matching 1.png) */}
-          <main className="flex-1 flex flex-col">
-            <Hero />
-            <CategoryStrip />
-            <PopularServices />
-            <ValueProps />
-            <ProBanner />
-            <BigProjectBanner />
-            <VideoSection />
-            <GuidesSection />
-            <CtaBanner />
-          </main>
+      {/* Main Public Homepage Flow (matching 1.png) */}
+      <main className="flex-1 flex flex-col">
+        <Hero />
+        <CategoryStrip />
+        <PopularServices />
+        <ValueProps />
+        <ProBanner />
+        <BigProjectBanner />
+        <VideoSection />
+        <GuidesSection />
+        <CtaBanner />
+      </main>
 
-          {/* Multi-Column Footer */}
-          <Footer />
-        </div>
-      </SignedOut>
-    </>
+      {/* Multi-Column Footer */}
+      <Footer />
+    </div>
   );
 }
