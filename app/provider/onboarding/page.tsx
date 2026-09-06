@@ -64,9 +64,23 @@ export default function ProviderOnboardingPage() {
     }
   };
 
-  const handleFinish = (e: React.FormEvent) => {
+  const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    if (user) {
+      try {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            role: "provider",
+            onboardingStatus: "completed",
+          },
+        });
+      } catch (err) {
+        console.error("Failed to sync provider metadata to Clerk:", err);
+      }
+    }
 
     // Save provider profile to local state
     if (typeof window !== "undefined") {

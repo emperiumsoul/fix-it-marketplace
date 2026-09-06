@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { Check, X } from "lucide-react";
 
 export interface RoleModalProps {
   userName?: string;
   isOpen: boolean;
+  canDismiss?: boolean;
   onClose: () => void;
   onSelectRole?: (role: "customer" | "provider") => void;
 }
@@ -14,30 +16,58 @@ export interface RoleModalProps {
 export function RoleModal({
   userName = "there",
   isOpen,
+  canDismiss = false,
   onClose,
   onSelectRole,
 }: RoleModalProps) {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = React.useState<"customer" | "provider" | null>("customer");
+  const { user } = useUser();
+  const [selectedRole, setSelectedRole] = React.useState<"customer" | "provider" | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!isOpen) return null;
 
-  const handleNext = () => {
-    if (!selectedRole) return;
+  const handleNext = async () => {
+    if (!selectedRole || isSubmitting) return;
 
-    // Save choice in localStorage
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fixit_role", selectedRole);
-      localStorage.setItem("fixit_role_modal_dismissed", "true");
-    }
+    setIsSubmitting(true);
+    try {
+      if (user) {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            role: selectedRole,
+          },
+        });
+      }
+      if (typeof window !== "undefined") {
+        localStorage.setItem("fixit_role", selectedRole);
+        localStorage.setItem("fixit_role_modal_dismissed", "true");
+      }
 
-    onSelectRole?.(selectedRole);
+      onSelectRole?.(selectedRole);
 
-    if (selectedRole === "customer") {
-      onClose();
-    } else {
-      onClose();
-      router.push("/provider/onboarding");
+      if (selectedRole === "customer") {
+        onClose();
+      } else {
+        onClose();
+        router.push("/provider/onboarding");
+      }
+    } catch (err) {
+      console.error("Failed to save role:", err);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("fixit_role", selectedRole);
+        localStorage.setItem("fixit_role_modal_dismissed", "true");
+      }
+      onSelectRole?.(selectedRole);
+      if (selectedRole === "customer") {
+        onClose();
+      } else {
+        onClose();
+        router.push("/provider/onboarding");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,18 +75,24 @@ export function RoleModal({
     <div
       role="dialog"
       aria-modal="true"
+      onClick={canDismiss ? onClose : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-[760px] bg-white rounded-[20px] shadow-2xl p-6 sm:p-10 text-[#222325] animate-in zoom-in-95 duration-200">
-        {/* Optional close icon */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close modal"
-          className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-[#74767E] hover:text-[#222325] hover:bg-[#F7F7F7] transition-colors cursor-pointer"
-        >
-          <X className="w-5 h-5" />
-        </button>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-[760px] bg-white rounded-[20px] shadow-2xl p-6 sm:p-10 text-[#222325] animate-in zoom-in-95 duration-200"
+      >
+        {/* Close icon only if modal can be dismissed */}
+        {canDismiss && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close modal"
+            className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-[#74767E] hover:text-[#222325] hover:bg-[#F7F7F7] transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Title & Subtitle matching 2.png */}
         <div className="text-center max-w-xl mx-auto mb-8 sm:mb-10">
@@ -178,10 +214,10 @@ export function RoleModal({
           <button
             type="button"
             onClick={handleNext}
-            disabled={!selectedRole}
-            className="px-8 py-2.5 bg-[#222325] hover:bg-black disabled:opacity-50 text-white font-semibold text-[14px] rounded-[8px] transition-colors shadow-sm cursor-pointer"
+            disabled={!selectedRole || isSubmitting}
+            className="px-8 py-2.5 bg-[#222325] hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-[14px] rounded-[8px] transition-colors shadow-sm cursor-pointer"
           >
-            Next
+            {isSubmitting ? "Saving..." : "Next"}
           </button>
         </div>
       </div>

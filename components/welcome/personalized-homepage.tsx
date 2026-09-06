@@ -15,10 +15,42 @@ export interface PersonalizedHomepageProps {
 }
 
 export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepageProps) {
-  const { user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const searchParams = useSearchParams();
 
-  const [isModalOpen, setIsModalOpen] = React.useState(true);
+  // Role from Clerk user metadata
+  const userRole = (user?.unsafeMetadata as { role?: "customer" | "provider" } | undefined)?.role;
+
+  // Track explicit user actions: dismiss or force open
+  const [userDismissed, setUserDismissed] = React.useState(false);
+  const [userForcedOpen, setUserForcedOpen] = React.useState(false);
+
+  const resetParam = searchParams?.get("reset") === "true";
+  const forceModalParam = searchParams?.get("modal") === "true";
+
+  // Clean local storage if reset is requested
+  React.useEffect(() => {
+    if (resetParam && typeof window !== "undefined") {
+      localStorage.removeItem("fixit_role");
+      localStorage.removeItem("fixit_role_modal_dismissed");
+    }
+  }, [resetParam]);
+
+  // Determine if role is established
+  const hasRole = Boolean(
+    isSignedIn
+      ? userRole
+      : typeof window !== "undefined"
+      ? localStorage.getItem("fixit_role")
+      : null
+  );
+
+  // Determine modal open state
+  const isModalOpen =
+    userForcedOpen || forceModalParam || (!userDismissed && (!isLoaded || !hasRole));
+
+  // Can dismiss only if the user already has a recognized role
+  const canDismiss = hasRole || userForcedOpen;
 
   // Derive personalized display name
   const userName =
@@ -26,18 +58,6 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
     user?.username ||
     initialUserName ||
     "Kingsley";
-
-  React.useEffect(() => {
-    // If user has already selected role and modal is not explicitly requested via query param
-    if (typeof window !== "undefined") {
-      const forceModal = searchParams?.get("modal") === "true";
-      const dismissed = localStorage.getItem("fixit_role_modal_dismissed");
-      if (!forceModal && dismissed === "true") {
-        const timer = setTimeout(() => setIsModalOpen(false), 0);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#404145] font-satoshi selection:bg-[#F3FDF9] selection:text-[#003912]">
@@ -52,7 +72,10 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
         {/* Welcome Greeting & 3 Recommended / Progress Cards */}
         <WelcomeHero
           userName={userName}
-          onOpenRoleModal={() => setIsModalOpen(true)}
+          onOpenRoleModal={() => {
+            setUserForcedOpen(true);
+            setUserDismissed(false);
+          }}
         />
 
         {/* Explore Popular Categories on Fix it: Left tabs + Right Cards */}
@@ -66,7 +89,15 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
       <RoleModal
         userName={user?.username || user?.firstName || userName}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        canDismiss={canDismiss}
+        onClose={() => {
+          setUserDismissed(true);
+          setUserForcedOpen(false);
+        }}
+        onSelectRole={() => {
+          setUserDismissed(true);
+          setUserForcedOpen(false);
+        }}
       />
     </div>
   );
