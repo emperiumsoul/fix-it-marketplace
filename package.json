@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node scripts/seed-sample-data.mjs"
+    "seed": "node scripts/seed-sample-data.mjs",
+    "seed:operations": "node scripts/seed-operations-and-search.mjs",
+    "seed:all": "npm run seed && npm run seed:operations"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.1",
