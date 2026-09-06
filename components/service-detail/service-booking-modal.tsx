@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { Check, X, Calendar, Clock, MapPin, AlertCircle } from "lucide-react";
-import { PackageType } from "./service-package-comparison";
 
 export interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedPackage: PackageType;
+  packageName: string;
+  packagePrice: number;
+  currency?: string;
   propertySize: string;
   selectedDate: string;
   selectedTime: string;
@@ -18,11 +19,13 @@ export interface BookingModalProps {
 export function ServiceBookingModal({
   isOpen,
   onClose,
-  selectedPackage,
+  packageName = "Standard Service",
+  packagePrice = 150,
+  currency = "GH₵",
   propertySize,
   selectedDate,
   selectedTime,
-  providerName = "Neat Home",
+  providerName = "Local Pro",
   location = "Accra",
 }: BookingModalProps) {
   const [address, setAddress] = React.useState("");
@@ -31,18 +34,6 @@ export function ServiceBookingModal({
   const [isSuccess, setIsSuccess] = React.useState(false);
 
   if (!isOpen) return null;
-
-  const packagePrices: Record<PackageType, number> = {
-    regular: 150,
-    deep: 300,
-    moveout: 400,
-  };
-
-  const packageNames: Record<PackageType, string> = {
-    regular: "Regular Home Cleaning",
-    deep: "Deep Home Cleaning",
-    moveout: "Move-out Home Cleaning",
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +78,7 @@ export function ServiceBookingModal({
             <div className="mt-6 p-4 rounded-[12px] bg-[#F9FAFB] border border-[#E5E7EB] text-left text-[13px] space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-[#74767E]">Package:</span>
-                <span className="font-semibold text-[#222325]">{packageNames[selectedPackage]}</span>
+                <span className="font-semibold text-[#222325]">{packageName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#74767E]">Scheduled Date:</span>
@@ -99,7 +90,7 @@ export function ServiceBookingModal({
               </div>
               <div className="flex justify-between border-t border-[#E5E7EB] pt-1.5 mt-1.5">
                 <span className="font-medium text-[#222325]">Agreed Price:</span>
-                <span className="font-bold text-[#008744]">GH₵{packagePrices[selectedPackage]}</span>
+                <span className="font-bold text-[#008744]">{currency}{packagePrice}</span>
               </div>
             </div>
             <button
@@ -124,8 +115,8 @@ export function ServiceBookingModal({
             {/* Summary Box */}
             <div className="p-4 rounded-[12px] bg-[#F9FAFB] border border-[#E5E7EB] flex flex-col gap-2 text-[13px]">
               <div className="flex justify-between items-center">
-                <span className="font-medium text-[#222325]">{packageNames[selectedPackage]}</span>
-                <span className="font-bold text-[15px] text-[#222325]">GH₵{packagePrices[selectedPackage]}</span>
+                <span className="font-medium text-[#222325]">{packageName}</span>
+                <span className="font-bold text-[15px] text-[#222325]">{currency}{packagePrice}</span>
               </div>
               <div className="flex items-center gap-4 text-[#74767E] text-[12px] pt-1 border-t border-[#E5E7EB]/60">
                 <div className="flex items-center gap-1">
@@ -139,7 +130,7 @@ export function ServiceBookingModal({
               </div>
               {propertySize && (
                 <div className="text-[12px] text-[#62646A]">
-                  Property: <span className="font-medium text-[#222325]">{propertySize}</span>
+                  Property/Scope: <span className="font-medium text-[#222325]">{propertySize}</span>
                 </div>
               )}
             </div>
@@ -169,7 +160,7 @@ export function ServiceBookingModal({
               </label>
               <textarea
                 rows={3}
-                placeholder="Any special focus areas, pet precautions, or gate access instructions..."
+                placeholder="Any special focus areas, access instructions, or specific items to note..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full p-3 rounded-[8px] border border-[#DADBDD] text-[13px] text-[#222325] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#222325]"

@@ -2,47 +2,53 @@
 
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
+import { ServiceFAQData } from "./types";
 
-interface FAQItem {
-  question: string;
-  answer: string;
+export interface ServiceFAQsProps {
+  faqs?: ServiceFAQData[];
+  categoryTitle?: string;
 }
 
-const DEFAULT_FAQS: FAQItem[] = [
-  {
-    question: "What does regular cleaning include?",
-    answer:
-      "Regular cleaning includes dusting surfaces, vacuuming and mopping floors, kitchen countertops, sink and exterior appliance wipe-down, bathroom toilet, basin, mirror, shower wipe, and general bedroom tidying and trash removal.",
-  },
-  {
-    question: "Do I need to provide cleaning supplies?",
-    answer:
-      "No. Our service providers bring their own eco-friendly detergents, microfiber cloths, mops, buckets, and standard equipment. If you prefer specific specialized products used on delicate surfaces, feel free to make them available.",
-  },
-  {
-    question: "How do I choose a date and time?",
-    answer:
-      "You can select your preferred appointment date and time slot using the booking panel on this page. The provider will promptly review and confirm the schedule.",
-  },
-  {
-    question: "Can I book recurring cleaning?",
-    answer:
-      "Yes! You can arrange weekly, bi-weekly, or monthly cleaning sessions with your provider directly or through regular booking requests on Fix it.",
-  },
-  {
-    question: "Do I need to be home?",
-    answer:
-      "It is recommended to be present at the start of the service to grant access and walk through your priorities. You can either stay on-site or return for final inspection.",
-  },
-  {
-    question: "How is the final price calculated?",
-    answer:
-      "The starting price covers standard properties for the selected package. Final quotes may adjust slightly based on the number of bedrooms, bathrooms, square footage, or optional extra requests.",
-  },
-];
+export function ServiceFAQs({
+  faqs = [],
+  categoryTitle = "Cleaning",
+}: ServiceFAQsProps) {
+  const [openIndices, setOpenIndices] = React.useState<number[]>([0]);
 
-export function ServiceFAQs({ faqs = DEFAULT_FAQS }: { faqs?: FAQItem[] }) {
-  const [openIndices, setOpenIndices] = React.useState<number[]>([]);
+  const defaultCategoryFAQs: ServiceFAQData[] = [
+    {
+      question: `What does standard ${categoryTitle.toLowerCase()} include?`,
+      answer: `Our standard ${categoryTitle.toLowerCase()} package covers complete on-site diagnostic survey, standard labor, required consumables, and post-service testing to ensure high quality results.`,
+    },
+    {
+      question: "Do I need to provide materials or tools?",
+      answer:
+        "No. Our verified professionals arrive fully equipped with professional-grade tools, safety gear, and standard materials. If specialized parts or fixtures are needed, they are agreed transparently in advance.",
+    },
+    {
+      question: "How do I choose a date and time?",
+      answer:
+        "You can select your preferred date and time slot using the booking sidebar on this page. The provider will promptly review and confirm the schedule.",
+    },
+    {
+      question: "Can I book recurring service?",
+      answer:
+        "Yes! Recurring maintenance plans (weekly, bi-weekly, or monthly) can be arranged directly with your provider after the initial booking.",
+    },
+    {
+      question: "Do I need to be present during the work?",
+      answer:
+        "It is recommended to be present at the start of the service to grant access and walk through your priorities. You can either stay on-site or return for the final inspection.",
+    },
+    {
+      question: "How is the final price calculated?",
+      answer:
+        "The starting price covers standard properties for the selected package. Final quotes may adjust slightly based on compound size, specific fixtures, or optional add-ons.",
+    },
+  ];
+
+  const displayFaqs =
+    faqs && faqs.length > 0 ? faqs : defaultCategoryFAQs;
 
   const toggleIndex = (idx: number) => {
     setOpenIndices((prev) =>
@@ -57,7 +63,7 @@ export function ServiceFAQs({ faqs = DEFAULT_FAQS }: { faqs?: FAQItem[] }) {
       </h3>
 
       <div className="divide-y divide-[#E5E7EB] rounded-[14px] border border-[#E5E7EB] bg-white overflow-hidden">
-        {faqs.map((faq, idx) => {
+        {displayFaqs.map((faq, idx) => {
           const isOpen = openIndices.includes(idx);
           return (
             <div key={idx} className="transition-colors">

@@ -2,12 +2,17 @@
 
 import * as React from "react";
 import { Calendar, Clock, ChevronDown, Info } from "lucide-react";
-import { PackageType } from "./service-package-comparison";
+import { ServicePackageData } from "./types";
 import { ServiceReviews } from "./service-reviews";
 
 export interface ServiceBookingSidebarProps {
-  selectedPackage: PackageType;
-  onSelectPackage: (pkg: PackageType) => void;
+  packages?: ServicePackageData[];
+  selectedPackageIndex: number;
+  onSelectPackageIndex: (idx: number) => void;
+  currency?: string;
+  categoryTitle?: string;
+  categorySlug?: string;
+  location?: string;
   onRequestBooking: (data: {
     propertySize: string;
     selectedDate: string;
@@ -17,8 +22,12 @@ export interface ServiceBookingSidebarProps {
 }
 
 export function ServiceBookingSidebar({
-  selectedPackage,
-  onSelectPackage,
+  packages = [],
+  selectedPackageIndex,
+  onSelectPackageIndex,
+  currency = "GH₵",
+  categoryTitle = "Cleaning",
+  categorySlug = "cleaning",
   onRequestBooking,
   onContactProvider,
 }: ServiceBookingSidebarProps) {
@@ -26,102 +35,86 @@ export function ServiceBookingSidebar({
   const [selectedDate, setSelectedDate] = React.useState("");
   const [selectedTime, setSelectedTime] = React.useState("");
 
-  const packagesInfo: Record<
-    PackageType,
-    {
-      title: string;
-      price: number;
-      description: string;
-      inclusions: string[];
-    }
-  > = {
-    regular: {
-      title: "Regular home cleaning",
-      price: 150,
-      description:
-        "Keep your home fresh and tidy with our regular cleaning service. Ideal for weekly or bi-weekly maintenance.",
-      inclusions: [
-        "Dusting and surface cleaning",
-        "Vacuuming and mopping",
-        "Kitchen and bathroom cleaning",
-        "Bedroom and living-area tidying",
-      ],
-    },
-    deep: {
-      title: "Deep home cleaning",
-      price: 300,
-      description:
-        "Intensive scrubbing for grout, tile descaling, inside oven, baseboards, and comprehensive sanitization.",
-      inclusions: [
-        "Dusting and surface cleaning",
-        "Vacuuming and mopping",
-        "Kitchen and bathroom cleaning",
-        "Detailed grout & appliance cleaning",
-      ],
-    },
-    moveout: {
-      title: "Move-out home cleaning",
-      price: 400,
-      description:
-        "Complete empty-property scrub and preparation for handover, new tenants, or property sales.",
-      inclusions: [
-        "Dusting and surface cleaning",
-        "Vacuuming and mopping",
-        "Kitchen and bathroom cleaning",
-        "Empty-property cabinet & window detailing",
-      ],
-    },
-  };
+  const displayPackages: ServicePackageData[] =
+    packages && packages.length > 0
+      ? packages
+      : [
+          {
+            name: "Regular Service",
+            price: 150,
+            description: "Standard single session maintenance and upkeep.",
+            includedTasks: [
+              "Initial diagnostic and assessment",
+              "Standard repair and execution",
+              "Testing and cleanup",
+            ],
+          },
+          {
+            name: "Comprehensive Service",
+            price: 300,
+            description: "In-depth multi-point service and detailed overhaul.",
+            includedTasks: [
+              "Comprehensive diagnostic inspection",
+              "Multi-point parts and repair servicing",
+              "System pressure/performance test",
+              "Extended quality assurance",
+            ],
+          },
+          {
+            name: "Full Overhaul / Premium",
+            price: 450,
+            description: "Complete full-compound service with thorough inspection.",
+            includedTasks: [
+              "Full residence audit and service",
+              "Component replacement & deep tuning",
+              "Post-service calibration",
+              "Priority support guarantee",
+            ],
+          },
+        ];
 
-  const currentPkg = packagesInfo[selectedPackage];
+  const currentPkg = displayPackages[selectedPackageIndex] || displayPackages[0];
 
   const handleBookingClick = () => {
     onRequestBooking({
-      propertySize: propertySize || "Standard (2-3 Bedroom)",
+      propertySize: propertySize || "Standard residential space",
       selectedDate: selectedDate || new Date().toISOString().split("T")[0],
-      selectedTime: selectedTime || "Morning (9:00 AM - 12:00 PM)",
+      selectedTime: selectedTime || "Morning slot (9:00 AM - 12:00 PM)",
     });
+  };
+
+  // Short tab label extractor
+  const getTabLabel = (name: string, index: number) => {
+    const parts = name.split(" ");
+    if (parts[0].length <= 9) return parts[0];
+    if (index === 0) return "Basic";
+    if (index === 1) return "Standard";
+    return "Premium";
   };
 
   return (
     <div className="flex flex-col gap-6 lg:sticky lg:top-20">
       {/* Booking Form Card matching 5.png */}
       <div className="rounded-[16px] border border-[#E5E7EB] bg-white shadow-xs overflow-hidden flex flex-col">
-        {/* Top 3 Package Selector Tabs */}
-        <div className="grid grid-cols-3 border-b border-[#E5E7EB] text-center text-[14px] font-medium bg-[#FAFAFA]">
-          <button
-            type="button"
-            onClick={() => onSelectPackage("regular")}
-            className={`py-3.5 transition-colors cursor-pointer ${
-              selectedPackage === "regular"
-                ? "font-semibold text-[#222325] border-b-2 border-[#222325] bg-white"
-                : "text-[#74767E] hover:text-[#222325]"
-            }`}
-          >
-            Regular
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectPackage("deep")}
-            className={`py-3.5 transition-colors cursor-pointer ${
-              selectedPackage === "deep"
-                ? "font-semibold text-[#222325] border-b-2 border-[#222325] bg-white"
-                : "text-[#74767E] hover:text-[#222325]"
-            }`}
-          >
-            Deep
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectPackage("moveout")}
-            className={`py-3.5 transition-colors cursor-pointer ${
-              selectedPackage === "moveout"
-                ? "font-semibold text-[#222325] border-b-2 border-[#222325] bg-white"
-                : "text-[#74767E] hover:text-[#222325]"
-            }`}
-          >
-            Move-out
-          </button>
+        {/* Dynamic Package Selector Tabs */}
+        <div
+          className="grid border-b border-[#E5E7EB] text-center text-[13px] sm:text-[14px] font-medium bg-[#FAFAFA]"
+          style={{ gridTemplateColumns: `repeat(${displayPackages.length}, minmax(0, 1fr))` }}
+        >
+          {displayPackages.map((pkg, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onSelectPackageIndex(idx)}
+              className={`py-3.5 px-2 transition-colors cursor-pointer truncate ${
+                selectedPackageIndex === idx
+                  ? "font-semibold text-[#222325] border-b-2 border-[#222325] bg-white"
+                  : "text-[#74767E] hover:text-[#222325]"
+              }`}
+            >
+              {getTabLabel(pkg.name, idx)}
+            </button>
+          ))}
         </div>
 
         {/* Card Body */}
@@ -129,37 +122,39 @@ export function ServiceBookingSidebar({
           {/* Header Title & Price */}
           <div>
             <h3 className="font-grotesque font-bold text-[18px] text-[#222325]">
-              {currentPkg.title}
+              {currentPkg.name}
             </h3>
             <div className="font-grotesque font-bold text-[28px] sm:text-[32px] text-[#222325] mt-1">
-              GH₵{currentPkg.price}
+              {currency}{currentPkg.price}
             </div>
             <p className="text-[13px] leading-[19px] text-[#62646A] mt-2">
-              {currentPkg.description}
+              {currentPkg.description || currentPkg.scope || "Professional service tailored to your requirements."}
             </p>
           </div>
 
           {/* This includes bullet list */}
-          <div className="pt-2 border-t border-[#F3F4F6]">
-            <h4 className="font-semibold text-[13px] text-[#222325] mb-2">
-              This includes:
-            </h4>
-            <ul className="space-y-1.5 text-[13px] text-[#404145]">
-              {currentPkg.inclusions.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-[#008744] font-bold">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {currentPkg.includedTasks && currentPkg.includedTasks.length > 0 && (
+            <div className="pt-2 border-t border-[#F3F4F6]">
+              <h4 className="font-semibold text-[13px] text-[#222325] mb-2">
+                This includes:
+              </h4>
+              <ul className="space-y-1.5 text-[13px] text-[#404145]">
+                {currentPkg.includedTasks.slice(0, 5).map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-[#008744] font-bold">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Form Fields matching 5.png */}
           <div className="flex flex-col gap-3.5 pt-2 border-t border-[#F3F4F6]">
-            {/* Property Size */}
+            {/* Property Size / Scope */}
             <div>
               <label className="block text-[12px] font-semibold text-[#62646A] mb-1">
-                Property size
+                Property size / Service scope
               </label>
               <div className="relative">
                 <select
@@ -167,11 +162,11 @@ export function ServiceBookingSidebar({
                   onChange={(e) => setPropertySize(e.target.value)}
                   className="w-full h-[40px] pl-3 pr-8 rounded-[8px] border border-[#DADBDD] text-[13px] text-[#222325] bg-white appearance-none focus:outline-none focus:border-[#222325] cursor-pointer"
                 >
-                  <option value="">Select property size</option>
-                  <option value="1 Bedroom / Studio">1 Bedroom / Studio</option>
-                  <option value="2 Bedrooms">2 Bedrooms</option>
-                  <option value="3 Bedrooms">3 Bedrooms</option>
-                  <option value="4+ Bedrooms">4+ Bedrooms</option>
+                  <option value="">Select scope</option>
+                  <option value="Single room / 1 Bedroom">Single room / 1 Bedroom</option>
+                  <option value="2-3 Bedrooms / Standard Compound">2-3 Bedrooms / Standard Compound</option>
+                  <option value="4+ Bedrooms / Large Residence">4+ Bedrooms / Large Residence</option>
+                  <option value="Commercial Office / Store">Commercial Office / Store</option>
                 </select>
                 <ChevronDown className="w-4 h-4 text-[#74767E] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -242,7 +237,7 @@ export function ServiceBookingSidebar({
       </div>
 
       {/* Customer reviews card placed in right column matching 5.png */}
-      <ServiceReviews />
+      <ServiceReviews categoryTitle={categoryTitle} categorySlug={categorySlug} />
     </div>
   );
 }

@@ -2,14 +2,23 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { getCategoryPreset } from "./category-presets";
 
-export function ServiceRelatedTags() {
-  const tags = [
-    { label: "House Cleaning", href: "/search?q=house+cleaning" },
-    { label: "Deep Cleaning", href: "/search?q=deep+cleaning" },
-    { label: "Regular Cleaning", href: "/search?q=regular+cleaning" },
-    { label: "Move-out Cleaning", href: "/search?q=move-out+cleaning" },
-  ];
+export interface ServiceRelatedTagsProps {
+  tags?: string[];
+  categoryTitle?: string;
+  categorySlug?: string;
+}
+
+export function ServiceRelatedTags({
+  tags,
+  categoryTitle = "Cleaning",
+  categorySlug = "cleaning",
+}: ServiceRelatedTagsProps) {
+  const preset = getCategoryPreset(categorySlug || categoryTitle);
+
+  const displayTags =
+    tags && tags.length > 0 ? tags : preset.tags;
 
   return (
     <div className="flex flex-col gap-3">
@@ -17,13 +26,13 @@ export function ServiceRelatedTags() {
         Related tags
       </h3>
       <div className="flex flex-wrap gap-2">
-        {tags.map((tag, idx) => (
+        {displayTags.map((tag, idx) => (
           <Link
             key={idx}
-            href={tag.href}
+            href={`/search?q=${encodeURIComponent(tag)}`}
             className="px-3.5 py-1.5 rounded-full border border-[#E5E7EB] bg-white hover:border-[#222325] text-[13px] font-medium text-[#404145] hover:text-[#222325] transition-colors"
           >
-            {tag.label}
+            {tag}
           </Link>
         ))}
       </div>

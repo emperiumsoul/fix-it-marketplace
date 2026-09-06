@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { Star, Search, ChevronDown } from "lucide-react";
+import { getCategoryPreset } from "./category-presets";
 
-interface CustomerReview {
-  id: string;
+export interface CustomerReview {
   name: string;
   avatarLetter: string;
   avatarBg: string;
@@ -14,57 +14,27 @@ interface CustomerReview {
   comment: string;
 }
 
-const DEFAULT_REVIEWS: CustomerReview[] = [
-  {
-    id: "rev-1",
-    name: "Ama K.",
-    avatarLetter: "A",
-    avatarBg: "bg-[#71717A]",
-    rating: 5.0,
-    location: "Accra",
-    timeAgo: "2 weeks ago",
-    comment:
-      "Very thorough and professional. My house looks and smells so fresh. Great attention to detail.",
-  },
-  {
-    id: "rev-2",
-    name: "Kofi M.",
-    avatarLetter: "K",
-    avatarBg: "bg-[#831843]",
-    rating: 5.0,
-    location: "Tema",
-    timeAgo: "1 month ago",
-    comment:
-      "Punctual, friendly and did an excellent job. Highly recommend!",
-  },
-  {
-    id: "rev-3",
-    name: "Efua S.",
-    avatarLetter: "E",
-    avatarBg: "bg-[#9D174D]",
-    rating: 4.0,
-    location: "Accra",
-    timeAgo: "1 month ago",
-    comment: "Good service and clear communication. Will book again.",
-  },
-  {
-    id: "rev-4",
-    name: "Daniel A.",
-    avatarLetter: "D",
-    avatarBg: "bg-[#991B1B]",
-    rating: 5.0,
-    location: "East Legon",
-    timeAgo: "2 months ago",
-    comment: "Reliable and hardworking. My apartment was spotless.",
-  },
-];
+export interface ServiceReviewsProps {
+  categoryTitle?: string;
+  categorySlug?: string;
+  reviews?: CustomerReview[];
+}
 
-export function ServiceReviews() {
+export function ServiceReviews({
+  categoryTitle = "Cleaning",
+  categorySlug = "cleaning",
+  reviews,
+}: ServiceReviewsProps) {
+  const preset = getCategoryPreset(categorySlug || categoryTitle);
+
+  const displayReviews =
+    reviews && reviews.length > 0 ? reviews : preset.reviews;
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [starFilter, setStarFilter] = React.useState<string>("all");
   const [visibleCount, setVisibleCount] = React.useState(4);
 
-  const filteredReviews = DEFAULT_REVIEWS.filter((rev) => {
+  const filteredReviews = displayReviews.filter((rev) => {
     const matchesSearch =
       rev.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rev.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -173,8 +143,8 @@ export function ServiceReviews() {
 
       {/* Reviews List */}
       <div className="divide-y divide-[#F3F4F6] pt-1">
-        {filteredReviews.slice(0, visibleCount).map((rev) => (
-          <div key={rev.id} className="py-4 first:pt-2 last:pb-0 flex flex-col gap-2">
+        {filteredReviews.slice(0, visibleCount).map((rev, idx) => (
+          <div key={idx} className="py-4 first:pt-2 last:pb-0 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div

@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Heart } from "lucide-react";
+import { RecommendedServiceItem } from "./types";
 
 interface MiniServiceCardProps {
   slug: string;
@@ -73,79 +74,92 @@ function MiniServiceCard({
   );
 }
 
-export function ServiceRecommendations() {
-  const recommendedServices = [
-    {
-      slug: "sofa-carpet-cleaning",
-      title: "Sofa and carpet cleaning",
-      rating: 4.8,
-      reviews: 16,
-      price: 200,
-      imageUrl: "https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      slug: "move-in-out-cleaning",
-      title: "Move-in and move-out cleaning",
-      rating: 4.9,
-      reviews: 26,
-      price: 350,
-      imageUrl: "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=600&q=80",
-    },
-  ];
+export interface ServiceRecommendationsProps {
+  relatedServices?: RecommendedServiceItem[];
+  categoryTitle?: string;
+}
 
-  const moreCleaningServices = [
+export function ServiceRecommendations({
+  relatedServices = [],
+  categoryTitle = "Cleaning",
+}: ServiceRecommendationsProps) {
+  // Default fallback recommendation sets
+  const defaultRecommended: RecommendedServiceItem[] = [
     {
-      slug: "general-home-cleaning",
-      title: "General home cleaning",
-      rating: 4.8,
-      reviews: 32,
-      price: 150,
+      slug: "sample-deep-home-cleaning-sanitization",
+      title: "Full House Deep Cleaning & Sanitization",
+      rating: 4.9,
+      reviews: 28,
+      price: 450,
       imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80",
     },
     {
-      slug: "sofa-upholstery-cleaning",
-      title: "Sofa and upholstery cleaning",
-      rating: 4.7,
-      reviews: 19,
-      price: 200,
-      imageUrl: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      slug: "office-cleaning",
-      title: "Office cleaning",
+      slug: "sample-routine-home-cleaning",
+      title: "Routine Weekly Home Maintenance",
       rating: 4.8,
-      reviews: 14,
-      price: 250,
-      imageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80",
+      reviews: 19,
+      price: 220,
+      imageUrl: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80",
     },
   ];
 
-  const peopleAlsoViewed = [
+  const defaultMoreServices: RecommendedServiceItem[] = [
     {
-      slug: "bathroom-deep-cleaning",
-      title: "Bathroom deep cleaning",
-      rating: 4.8,
-      reviews: 21,
-      price: 180,
-      imageUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      slug: "window-cleaning",
-      title: "Window cleaning",
-      rating: 4.6,
-      reviews: 12,
-      price: 120,
-      imageUrl: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80",
-    },
-    {
-      slug: "end-of-tenancy-cleaning",
-      title: "End of tenancy cleaning",
+      slug: "sample-residential-plumbing-leak-repair",
+      title: "Residential Plumbing & Leak Repair",
       rating: 4.9,
-      reviews: 19,
-      price: 300,
-      imageUrl: "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=600&q=80",
+      reviews: 34,
+      price: 180,
+      imageUrl: "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      slug: "sample-electrical-fault-finding-repairs",
+      title: "Electrical Fault Diagnostics & Rewiring",
+      rating: 4.8,
+      reviews: 22,
+      price: 150,
+      imageUrl: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      slug: "sample-interior-exterior-painting",
+      title: "Interior & Exterior Wall Painting",
+      rating: 4.9,
+      reviews: 17,
+      price: 400,
+      imageUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=600&q=80",
     },
   ];
+
+  const defaultPeopleViewed: RecommendedServiceItem[] = [
+    {
+      slug: "sample-furniture-assembly-tv-mounting",
+      title: "Flat-Pack Furniture Assembly & TV Mounting",
+      rating: 4.8,
+      reviews: 15,
+      price: 150,
+      imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      slug: "sample-lawn-mowing-gardening-care",
+      title: "Lawn Mowing & Compound Landscaping",
+      rating: 4.7,
+      reviews: 12,
+      price: 160,
+      imageUrl: "https://images.unsplash.com/photo-1557429287-b2e26467fc2b?auto=format&fit=crop&w=600&q=80",
+    },
+    {
+      slug: "sample-residential-moving-transport",
+      title: "Residential Home Moving & Packing",
+      rating: 4.9,
+      reviews: 26,
+      price: 600,
+      imageUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80",
+    },
+  ];
+
+  const firstTwo = relatedServices.length >= 2 ? relatedServices.slice(0, 2) : defaultRecommended;
+  const nextThree = relatedServices.length >= 5 ? relatedServices.slice(2, 5) : defaultMoreServices;
+  const lastThree = relatedServices.length >= 8 ? relatedServices.slice(5, 8) : defaultPeopleViewed;
 
   return (
     <div className="flex flex-col gap-10">
@@ -155,19 +169,19 @@ export function ServiceRecommendations() {
           Recommended for you
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {recommendedServices.map((service, idx) => (
+          {firstTwo.map((service, idx) => (
             <MiniServiceCard key={idx} {...service} />
           ))}
         </div>
       </div>
 
-      {/* More cleaning services matching 5.png */}
+      {/* More {category} services matching 5.png */}
       <div className="flex flex-col gap-4">
         <h3 className="font-grotesque font-bold text-[20px] text-[#222325]">
-          More cleaning services
+          More {categoryTitle.toLowerCase()} services
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {moreCleaningServices.map((service, idx) => (
+          {nextThree.map((service, idx) => (
             <MiniServiceCard key={idx} {...service} />
           ))}
         </div>
@@ -179,7 +193,7 @@ export function ServiceRecommendations() {
           People also viewed
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {peopleAlsoViewed.map((service, idx) => (
+          {lastThree.map((service, idx) => (
             <MiniServiceCard key={idx} {...service} />
           ))}
         </div>
