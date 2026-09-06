@@ -8,11 +8,74 @@ import {
   Menu,
   X,
   Search,
-  Bell,
   Mail,
   Heart,
+  Check,
 } from "lucide-react";
 import { SignInButton, SignUpButton, Show, UserButton, useUser } from "@clerk/nextjs";
+import { HeaderNotifications } from "./header-notifications";
+
+function LanguageSelector() {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [currentLang, setCurrentLang] = React.useState("EN");
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const languages = [
+    { code: "EN", name: "English" },
+    { code: "TW", name: "Twi (Akan)" },
+    { code: "GA", name: "Ga" },
+    { code: "EW", name: "Ewe" },
+  ];
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 cursor-pointer hover:text-[#222325] text-[13px] text-[#404145] py-1 px-1.5 rounded-[4px] hover:bg-[#F7F7F7] transition-colors"
+      >
+        <Globe className="w-4 h-4 text-[#74767E]" />
+        <span className="font-semibold">{currentLang}</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-[160px] bg-white rounded-[8px] border border-[#DADBDD] shadow-lg py-1 z-50 animate-in fade-in duration-100">
+          <div className="px-3 py-1 text-[11px] font-bold text-[#74767E] uppercase tracking-wider border-b border-[#F0F0F0]">
+            Marketplace Language
+          </div>
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              type="button"
+              onClick={() => {
+                setCurrentLang(lang.code);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-[13px] flex items-center justify-between hover:bg-[#F7F7F7] transition-colors cursor-pointer ${
+                currentLang === lang.code ? "text-[#008744] font-semibold bg-[#F4F9F5]" : "text-[#222325]"
+              }`}
+            >
+              <span>{lang.name}</span>
+              {currentLang === lang.code && <Check className="w-3.5 h-3.5 text-[#008744]" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export interface PublicHeaderProps {
   initialQuery?: string;
@@ -106,40 +169,35 @@ export function PublicHeader({
           </button>
 
           {/* Quick utility icons matching 4.png */}
-          <div className="flex items-center gap-3.5 text-[#62646A] border-l border-[#E5E7EB] pl-4">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="hover:text-[#222325] transition-colors cursor-pointer"
-            >
-              <Bell className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
+          <div className="flex items-center gap-3 text-[#62646A] border-l border-[#E5E7EB] pl-4">
+            <HeaderNotifications />
+            
+            <Link
+              href="/messages"
               aria-label="Messages"
-              className="hover:text-[#222325] transition-colors cursor-pointer"
+              className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
             >
               <Mail className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
+            </Link>
+
+            <Link
+              href="/saved"
               aria-label="Saved services"
-              className="hover:text-[#222325] transition-colors cursor-pointer"
+              className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
             >
               <Heart className="w-4 h-4" />
-            </button>
+            </Link>
+
             <Link
-              href="#bookings"
-              className="hover:text-[#222325] transition-colors text-[14px] font-medium ml-1"
+              href="/bookings"
+              className="hover:text-[#008744] transition-colors text-[14px] font-medium ml-1"
             >
               Bookings
             </Link>
           </div>
 
-          <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#222325] text-[13px]">
-            <Globe className="w-4 h-4 text-[#74767E]" />
-            <span>EN</span>
-          </div>
+          {/* Language Selector */}
+          <LanguageSelector />
 
           <Show when="signed-out">
             <div className="flex items-center gap-3 ml-1">
@@ -211,11 +269,25 @@ export function PublicHeader({
             Become a Provider
           </button>
           <Link
-            href="#bookings"
+            href="/bookings"
             onClick={() => setMobileMenuOpen(false)}
-            className="py-1.5 hover:text-[#222325]"
+            className="py-1.5 hover:text-[#008744]"
           >
-            Bookings
+            My Bookings & Orders
+          </Link>
+          <Link
+            href="/messages"
+            onClick={() => setMobileMenuOpen(false)}
+            className="py-1.5 hover:text-[#008744]"
+          >
+            Messages & Chat
+          </Link>
+          <Link
+            href="/saved"
+            onClick={() => setMobileMenuOpen(false)}
+            className="py-1.5 hover:text-[#008744]"
+          >
+            Saved Services
           </Link>
           <Link
             href="/search"

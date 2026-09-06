@@ -36,13 +36,82 @@ export function ServiceCard({
   isSample = true,
   onSave,
 }: ServiceCardProps) {
-  const [saved, setSaved] = React.useState(false);
+  const itemKey = id || slug || title;
+  const [saved, setSaved] = React.useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("fixit_saved_services");
+        if (stored) {
+          const list = JSON.parse(stored);
+          return Array.isArray(list) && list.some((item: { id?: string; slug?: string; title?: string }) => (item.id || item.slug || item.title) === itemKey);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return false;
+  });
+
+  React.useEffect(() => {
+    const handleStorageUpdate = () => {
+      if (typeof window !== "undefined") {
+        try {
+          const stored = localStorage.getItem("fixit_saved_services");
+          if (stored) {
+            const list = JSON.parse(stored);
+            setSaved(Array.isArray(list) && list.some((item: { id?: string; slug?: string; title?: string }) => (item.id || item.slug || item.title) === itemKey));
+          } else {
+            setSaved(false);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener("fixit_saved_updated", handleStorageUpdate);
+    return () => window.removeEventListener("fixit_saved_updated", handleStorageUpdate);
+  }, [itemKey]);
 
   const handleToggleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const nextSaved = !saved;
     setSaved(nextSaved);
+
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("fixit_saved_services");
+        let list = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(list)) list = [];
+
+        if (nextSaved) {
+          const newItem = {
+            id: id || slug || `svc-${Date.now()}`,
+            slug,
+            title,
+            category,
+            providerName,
+            price,
+            currency,
+            rating,
+            reviewCount,
+            location,
+            imageUrl,
+            isSample,
+          };
+          if (!list.some((item: { id?: string; slug?: string; title?: string }) => (item.id || item.slug || item.title) === itemKey)) {
+            list.push(newItem);
+          }
+        } else {
+          list = list.filter((item: { id?: string; slug?: string; title?: string }) => (item.id || item.slug || item.title) !== itemKey);
+        }
+        localStorage.setItem("fixit_saved_services", JSON.stringify(list));
+        window.dispatchEvent(new Event("fixit_saved_updated"));
+      } catch (err) {
+        console.error("Failed to update saved services", err);
+      }
+    }
+
     onSave?.(nextSaved);
   };
 
