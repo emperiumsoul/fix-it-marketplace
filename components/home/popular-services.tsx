@@ -7,7 +7,7 @@ export function PopularServices() {
     {
       title: "House Cleaning",
       buttonText: "Book Cleaning",
-      href: "/search?service=cleaning",
+      href: "/categories/cleaning",
       bgColor: "bg-[#FDF2F4]",
       imageUrl:
         "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=500&q=80",
@@ -15,7 +15,7 @@ export function PopularServices() {
     {
       title: "Plumbing",
       buttonText: "Book a Plumber",
-      href: "/search?service=plumbing",
+      href: "/categories/plumbing",
       bgColor: "bg-[#EFF6FF]",
       imageUrl:
         "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=500&q=80",
@@ -23,7 +23,7 @@ export function PopularServices() {
     {
       title: "Electrical Repairs",
       buttonText: "Book an Electrician",
-      href: "/search?service=electrical",
+      href: "/categories/electrical-repairs",
       bgColor: "bg-[#FEFCE8]",
       imageUrl:
         "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=500&q=80",
@@ -31,7 +31,7 @@ export function PopularServices() {
     {
       title: "Painting",
       buttonText: "Book a Painter",
-      href: "/search?service=painting",
+      href: "/categories/painting-decorating",
       bgColor: "bg-[#F0F9FF]",
       imageUrl:
         "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=500&q=80",
@@ -39,7 +39,7 @@ export function PopularServices() {
     {
       title: "Moving",
       buttonText: "Get a Quote",
-      href: "/search?service=moving",
+      href: "/categories/moving-relocation",
       bgColor: "bg-[#F0FDF4]",
       imageUrl:
         "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=500&q=80",
@@ -47,7 +47,7 @@ export function PopularServices() {
     {
       title: "Furniture Assembly",
       buttonText: "Book Assembly",
-      href: "/search?service=assembly",
+      href: "/categories/furniture-assembly",
       bgColor: "bg-[#ECFDF5]",
       imageUrl:
         "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=500&q=80",
@@ -63,12 +63,13 @@ export function PopularServices() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {services.map((svc) => (
-            <div
+            <Link
               key={svc.title}
-              className="flex flex-col rounded-[12px] border border-[#003912]/20 overflow-hidden bg-white shadow-xs hover:shadow-md transition-all group"
+              href={svc.href}
+              className="flex flex-col rounded-[12px] border border-[#003912]/20 overflow-hidden bg-white shadow-xs hover:shadow-md hover:border-[#008744] transition-all group cursor-pointer"
             >
               {/* Green Header Bar */}
-              <div className="bg-[#003912] px-3 py-2.5 text-center min-h-[46px] flex items-center justify-center">
+              <div className="bg-[#003912] group-hover:bg-[#00280D] px-3 py-2.5 text-center min-h-[46px] flex items-center justify-center transition-colors">
                 <span className="font-grotesque font-bold text-[13px] leading-[16px] text-white">
                   {svc.title}
                 </span>
@@ -89,14 +90,11 @@ export function PopularServices() {
                 </div>
 
                 {/* Bottom Action Pill Button */}
-                <Link
-                  href={svc.href}
-                  className="w-full py-1.5 px-2 bg-[#003912] hover:bg-[#00280D] text-white text-[11px] font-medium rounded-full text-center shadow-xs transition-colors mt-2"
-                >
+                <span className="w-full py-1.5 px-2 bg-[#003912] group-hover:bg-[#00280D] text-white text-[11px] font-medium rounded-full text-center shadow-xs transition-colors mt-2 inline-block">
                   {svc.buttonText}
-                </Link>
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

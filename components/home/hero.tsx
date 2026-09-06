@@ -11,11 +11,11 @@ export function Hero() {
   const [query, setQuery] = React.useState("");
 
   const quickServices = [
-    { label: "Plumbing", href: "/search?service=plumbing" },
-    { label: "House Cleaning", href: "/search?service=cleaning" },
-    { label: "Electrical Repairs", href: "/search?service=electrical" },
-    { label: "Painting", href: "/search?service=painting" },
-    { label: "Moving", href: "/search?service=moving" },
+    { label: "Plumbing", href: "/categories/plumbing" },
+    { label: "House Cleaning", href: "/categories/cleaning" },
+    { label: "Electrical Repairs", href: "/categories/electrical-repairs" },
+    { label: "Painting", href: "/categories/painting-decorating" },
+    { label: "Moving", href: "/categories/moving-relocation" },
   ];
 
   const popularLocations = ["Accra", "Kumasi", "Tema", "Takoradi"];

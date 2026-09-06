@@ -14,15 +14,15 @@ import {
 
 export function CategoryStrip() {
   const categories = [
-    { label: "Plumbing", icon: Wrench, href: "/search?category=plumbing" },
-    { label: "Cleaning", icon: Sparkles, href: "/search?category=cleaning" },
-    { label: "Electrical", icon: Zap, href: "/search?category=electrical" },
-    { label: "Painting", icon: Paintbrush, href: "/search?category=painting" },
-    { label: "Moving", icon: Truck, href: "/search?category=moving" },
-    { label: "Assembly", icon: Hammer, href: "/search?category=assembly" },
-    { label: "Gardening", icon: Leaf, href: "/search?category=gardening" },
-    { label: "Repairs", icon: Settings, href: "/search?category=repairs" },
-    { label: "More Services", icon: LayoutGrid, href: "/categories" },
+    { label: "Plumbing", icon: Wrench, href: "/categories/plumbing" },
+    { label: "Cleaning", icon: Sparkles, href: "/categories/cleaning" },
+    { label: "Electrical", icon: Zap, href: "/categories/electrical-repairs" },
+    { label: "Painting", icon: Paintbrush, href: "/categories/painting-decorating" },
+    { label: "Moving", icon: Truck, href: "/categories/moving-relocation" },
+    { label: "Assembly", icon: Hammer, href: "/categories/furniture-assembly" },
+    { label: "Gardening", icon: Leaf, href: "/categories/gardening-landscaping" },
+    { label: "Repairs", icon: Settings, href: "/categories/appliance-home-repairs" },
+    { label: "More Services", icon: LayoutGrid, href: "/search" },
   ];
 
   return (

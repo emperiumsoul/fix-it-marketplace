@@ -20,7 +20,12 @@ export async function generateMetadata({
 }: SearchPageProps): Promise<Metadata> {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const category = typeof sp.category === "string" ? sp.category.trim() : "";
+  const category =
+    typeof sp.category === "string"
+      ? sp.category.trim()
+      : typeof sp.service === "string"
+      ? sp.service.trim()
+      : "";
   const location = typeof sp.location === "string" ? sp.location.trim() : "";
 
   let title = "Search Local Services in Ghana | Fix it";
@@ -43,7 +48,9 @@ const CATEGORY_SLUG_MAP: Record<string, string> = {
   electrical: "electrical-repairs",
   painting: "painting-decorating",
   moving: "moving-relocation",
+  assembly: "furniture-assembly",
   gardening: "gardening-landscaping",
+  repairs: "appliance-home-repairs",
   "home-repairs": "appliance-home-repairs",
 };
 
@@ -69,7 +76,12 @@ interface RawService {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const category = typeof sp.category === "string" ? sp.category.trim() : "";
+  const category =
+    typeof sp.category === "string"
+      ? sp.category.trim()
+      : typeof sp.service === "string"
+      ? sp.service.trim()
+      : "";
   const location = typeof sp.location === "string" ? sp.location.trim() : "";
   const minPriceStr = typeof sp.minPrice === "string" ? sp.minPrice : "";
   const maxPriceStr = typeof sp.maxPrice === "string" ? sp.maxPrice : "";
