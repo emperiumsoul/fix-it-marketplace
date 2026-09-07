@@ -65,8 +65,18 @@ export function OrdersListView({
       cancelled: "Cancelled",
     };
     onStatusChangeToast?.(
-      `Order #${id} for ${order?.customerName || "customer"} updated to ${statusLabels[newStatus]}`
+      `Order #${id.slice(0, 8)} for ${order?.customerName || "customer"} updated to ${statusLabels[newStatus]}`
     );
+
+    try {
+      fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id, jobStatus: newStatus }),
+      }).catch((err) => console.warn("Failed to patch booking status on server:", err));
+    } catch {
+      // ignore
+    }
   };
 
   const filteredOrders = orders.filter((order) => {

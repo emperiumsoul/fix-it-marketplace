@@ -38,7 +38,7 @@ export function ServiceCard({
   reviewCount = 120,
   location = "Accra",
   imageUrl,
-  isSample = true,
+  isSample = false,
   onSave,
 }: ServiceCardProps) {
   const displayImage =

@@ -36,15 +36,15 @@ export async function POST(request: Request) {
     await client
       .patch(existing._id)
       .set({
-        verificationStatus: 'verified',
-        verified: true,
+        verificationStatus: 'pending',
+        verified: false,
       })
       .commit()
 
     return NextResponse.json({
       success: true,
-      verificationStatus: 'verified',
-      message: 'Identity verification approved successfully',
+      verificationStatus: 'pending',
+      message: 'Identity verification submitted. An administrator will review your Ghana Card details.',
     })
   } catch (error) {
     console.error('[PROVIDER_VERIFY_IDENTITY_ERROR]', error)

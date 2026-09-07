@@ -447,7 +447,7 @@ function DashboardInner() {
         onClose={() => setIsVerifyModalOpen(false)}
         onSuccess={() => {
           fetchDashboardData();
-          showToast("Ghana Card identity verification approved!");
+          showToast("Ghana Card identity submitted for admin review!");
         }}
         currentStatus={data?.metrics?.verificationStatus}
       />

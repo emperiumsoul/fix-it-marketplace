@@ -2,11 +2,16 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Calendar, Clock, MapPin, ArrowRight } from "lucide-react";
+import { Check, X, Calendar, Clock, MapPin, ArrowRight, AlertCircle } from "lucide-react";
 
 export interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  serviceId?: string;
+  serviceSlug?: string;
+  serviceTitle?: string;
+  providerId?: string;
+  providerClerkUserId?: string;
   packageName: string;
   packagePrice: number;
   currency?: string;
@@ -20,6 +25,11 @@ export interface BookingModalProps {
 export function ServiceBookingModal({
   isOpen,
   onClose,
+  serviceId,
+  serviceSlug,
+  serviceTitle,
+  providerId,
+  providerClerkUserId,
   packageName = "Standard Service",
   packagePrice = 150,
   currency = "GH₵",
@@ -35,88 +45,128 @@ export function ServiceBookingModal({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [createdBookingId, setCreatedBookingId] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    const bookingId = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
-    setCreatedBookingId(bookingId);
+    const fallbackBookingId = `BK-${Math.floor(10000 + Math.random() * 90000)}`;
+    const effectiveSlug = serviceSlug || (typeof window !== "undefined" ? window.location.pathname.split("/")[2] : "") || "service";
 
-    // Save to customer bookings
-    if (typeof window !== "undefined") {
-      try {
-        const storedCustomerBookings = localStorage.getItem("fixit_customer_bookings");
-        let customerList = storedCustomerBookings ? JSON.parse(storedCustomerBookings) : [];
-        if (!Array.isArray(customerList)) customerList = [];
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId,
+          serviceSlug: effectiveSlug,
+          providerId,
+          providerClerkUserId,
+          agreedPackageName: packageName,
+          agreedScope: notes
+            ? `${propertySize ? propertySize + " · " : ""}${notes}`
+            : `${propertySize || "Standard Service"} requested appointment`,
+          agreedPrice: packagePrice,
+          currency: currency === "GH₵" ? "GHS" : currency,
+          scheduledTime: selectedDate ? `${selectedDate} ${selectedTime || "09:00"}` : undefined,
+          serviceAddress: address || `${location || "Accra"}, Ghana`,
+          customerNotes: notes,
+        }),
+      });
 
-        const newCustomerBooking = {
-          id: bookingId,
-          providerName,
-          providerInitial: providerName.charAt(0).toUpperCase(),
-          serviceTitle: packageName,
-          serviceSlug: window.location.pathname.split("/")[2] || "service",
-          packageName,
-          scope: notes ? `${propertySize ? propertySize + " · " : ""}${notes}` : `${propertySize || "Standard Service"} requested appointment`,
-          price: packagePrice,
-          scheduledTime: `${selectedDate || "Next Available"} · ${selectedTime || "09:00 AM"}`,
-          address: address || `${location || "Accra"}, Ghana`,
-          status: "requested" as const,
-          paymentStatus: "unpaid" as const,
-        };
-
-        customerList = [newCustomerBooking, ...customerList];
-        localStorage.setItem("fixit_customer_bookings", JSON.stringify(customerList));
-
-        // Save to provider orders
-        const storedProviderOrders = localStorage.getItem("fixit_provider_orders");
-        let providerList = storedProviderOrders ? JSON.parse(storedProviderOrders) : [];
-        if (!Array.isArray(providerList)) providerList = [];
-
-        const newProviderOrder = {
-          id: bookingId,
-          customerName: "You (Customer)",
-          customerEmail: "customer@fixit.gh",
-          serviceTitle: packageName,
-          serviceSlug: window.location.pathname.split("/")[2] || "service",
-          package: packageName,
-          scheduledDate: selectedDate || "Next Available",
-          scheduledTime: selectedTime || "09:00 AM",
-          address: address || `${location || "Accra"}, Ghana`,
-          notes: notes || "Booking requested via service detail page",
-          amount: packagePrice,
-          status: "pending",
-          date: new Date().toISOString().split("T")[0],
-        };
-
-        providerList = [newProviderOrder, ...providerList];
-        localStorage.setItem("fixit_provider_orders", JSON.stringify(providerList));
-
-        // Add to notifications
-        const storedNotifs = localStorage.getItem("fixit_notifications");
-        let notifs = storedNotifs ? JSON.parse(storedNotifs) : [];
-        if (!Array.isArray(notifs)) notifs = [];
-        notifs.unshift({
-          id: `notif-${Date.now()}`,
-          title: "Booking Request Submitted",
-          description: `Your appointment request #${bookingId} with ${providerName} is awaiting provider confirmation.`,
-          timestamp: "Just now",
-          read: false,
-          type: "booking",
-          link: "/bookings",
-        });
-        localStorage.setItem("fixit_notifications", JSON.stringify(notifs));
-      } catch (err) {
-        console.error("Failed to persist booking", err);
+      const resData = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError("Please sign in to complete your booking.");
+        } else {
+          setError(resData.error || "Failed to submit booking request.");
+        }
+        setIsSubmitting(false);
+        return;
       }
-    }
 
-    setTimeout(() => {
+      const realBookingId = resData.bookingId || fallbackBookingId;
+      setCreatedBookingId(realBookingId);
+
+      // Save to customer bookings cache
+      if (typeof window !== "undefined") {
+        try {
+          const storedCustomerBookings = localStorage.getItem("fixit_customer_bookings");
+          let customerList = storedCustomerBookings ? JSON.parse(storedCustomerBookings) : [];
+          if (!Array.isArray(customerList)) customerList = [];
+
+          const newCustomerBooking = {
+            id: realBookingId,
+            providerName,
+            providerInitial: providerName.charAt(0).toUpperCase(),
+            serviceTitle: serviceTitle || packageName,
+            serviceSlug: effectiveSlug,
+            packageName,
+            scope: notes ? `${propertySize ? propertySize + " · " : ""}${notes}` : `${propertySize || "Standard Service"} requested appointment`,
+            price: packagePrice,
+            scheduledTime: `${selectedDate || "Next Available"} · ${selectedTime || "09:00 AM"}`,
+            address: address || `${location || "Accra"}, Ghana`,
+            status: "requested" as const,
+            paymentStatus: "unpaid" as const,
+          };
+
+          customerList = [newCustomerBooking, ...customerList];
+          localStorage.setItem("fixit_customer_bookings", JSON.stringify(customerList));
+
+          // Save to provider orders cache
+          const storedProviderOrders = localStorage.getItem("fixit_provider_orders");
+          let providerList = storedProviderOrders ? JSON.parse(storedProviderOrders) : [];
+          if (!Array.isArray(providerList)) providerList = [];
+
+          const newProviderOrder = {
+            id: realBookingId,
+            customerName: "You (Customer)",
+            customerEmail: "customer@fixit.gh",
+            serviceTitle: serviceTitle || packageName,
+            serviceSlug: effectiveSlug,
+            package: packageName,
+            scheduledDate: selectedDate || "Next Available",
+            scheduledTime: selectedTime || "09:00 AM",
+            address: address || `${location || "Accra"}, Ghana`,
+            notes: notes || "Booking requested via service detail page",
+            amount: packagePrice,
+            status: "pending",
+            date: new Date().toISOString().split("T")[0],
+          };
+
+          providerList = [newProviderOrder, ...providerList];
+          localStorage.setItem("fixit_provider_orders", JSON.stringify(providerList));
+
+          // Add to notifications
+          const storedNotifs = localStorage.getItem("fixit_notifications");
+          let notifs = storedNotifs ? JSON.parse(storedNotifs) : [];
+          if (!Array.isArray(notifs)) notifs = [];
+          notifs.unshift({
+            id: `notif-${Date.now()}`,
+            title: "Booking Request Submitted",
+            description: `Your appointment request #${realBookingId.slice(0, 8)} with ${providerName} is awaiting provider confirmation.`,
+            timestamp: "Just now",
+            read: false,
+            type: "booking",
+            link: "/bookings",
+          });
+          localStorage.setItem("fixit_notifications", JSON.stringify(notifs));
+        } catch (err) {
+          console.error("Failed to update booking cache", err);
+        }
+      }
+
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 600);
+    } catch (err) {
+      console.error("Failed to persist booking", err);
+      setError("An unexpected network error occurred while submitting.");
+      setIsSubmitting(false);
+    }
   };
 
   const handleTrackBookings = () => {
@@ -199,6 +249,12 @@ export function ServiceBookingModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {error && (
+              <div className="p-3 rounded-[10px] bg-[#FEE2E2] border border-[#FCA5A5] text-[#991B1B] text-[13px] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
             <div>
               <span className="text-[12px] font-semibold text-[#008744] uppercase tracking-wider">
                 Confirm Booking Request

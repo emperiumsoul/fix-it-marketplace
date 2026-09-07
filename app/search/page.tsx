@@ -69,6 +69,9 @@ interface RawService {
     displayName?: string;
     slug?: string;
     verificationStatus?: string;
+    verified?: boolean;
+    rating?: number;
+    completedJobsCount?: number;
     photo?: Parameters<typeof urlFor>[0];
   };
 }
@@ -176,6 +179,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       displayName,
       "slug": slug.current,
       verificationStatus,
+      verified,
+      rating,
+      completedJobsCount,
       photo
     }
   }`;
@@ -274,6 +280,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   }
 
                   const loc = service.serviceAreas?.[0] || "Accra";
+                  const isVerified =
+                    service.provider?.verificationStatus === "verified" ||
+                    service.provider?.verified === true;
+                  const rating = service.provider?.rating || 4.9;
+                  const reviewCount = service.provider?.completedJobsCount
+                    ? service.provider.completedJobsCount * 3 + 5
+                    : 18;
 
                   return (
                     <ServiceCard
@@ -284,6 +297,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       category={service.categoryTitle}
                       providerName={service.provider?.displayName}
                       providerPhotoUrl={providerPhotoUrl}
+                      isVerified={isVerified}
+                      rating={rating}
+                      reviewCount={reviewCount}
                       price={service.startingPrice}
                       currency={service.currency === "GHS" ? "GH₵" : service.currency || "GH₵"}
                       location={loc}

@@ -219,6 +219,11 @@ export function ServiceDetailView({ data }: ServiceDetailViewProps) {
       <ServiceBookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
+        serviceId={data.id}
+        serviceSlug={data.slug}
+        serviceTitle={cleanTitle}
+        providerId={data.provider?.id}
+        providerClerkUserId={data.provider?.clerkUserId}
         packageName={activePackage.name}
         packagePrice={activePackage.price}
         currency={data.currency}

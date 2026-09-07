@@ -86,6 +86,8 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           "slug": slug.current
         },
         provider->{
+          _id,
+          clerkUserId,
           displayName,
           "slug": slug.current,
           "photoUrl": photo.asset->url,
@@ -180,6 +182,8 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
         categoryTitle: raw.category?.title || "Local Services",
         categorySlug: raw.category?.slug || "services",
         provider: {
+          id: raw.provider?._id,
+          clerkUserId: raw.provider?.clerkUserId,
           displayName: raw.provider?.displayName || "Local Professional",
           slug: raw.provider?.slug || "",
           headline: raw.provider?.headline || "",

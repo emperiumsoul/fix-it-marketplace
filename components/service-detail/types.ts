@@ -14,6 +14,8 @@ export interface ServiceFAQData {
 }
 
 export interface ServiceProviderData {
+  id?: string;
+  clerkUserId?: string;
   displayName: string;
   slug?: string;
   headline?: string;

@@ -129,6 +129,69 @@ export function BookingsView() {
     return INITIAL_CUSTOMER_BOOKINGS;
   });
 
+  // Fetch real Sanity bookings for authenticated customer
+  React.useEffect(() => {
+    if (!isSignedIn) return;
+
+    let isMounted = true;
+
+    fetch("/api/bookings?role=customer")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (isMounted && resData?.success && Array.isArray(resData.bookings)) {
+          interface SanityBookingRecord {
+            _id: string;
+            providerName?: string;
+            providerPhotoUrl?: string;
+            serviceTitle?: string;
+            serviceSlug?: string;
+            agreedPackageName?: string;
+            agreedScope?: string;
+            agreedPrice?: number;
+            currency?: string;
+            scheduledTime?: string;
+            serviceAddress?: string;
+            jobStatus?: "requested" | "confirmed" | "in_progress" | "completed" | "cancelled";
+            paymentStatus?: "paid" | "pending" | "unpaid";
+            _createdAt?: string;
+          }
+
+          const liveItems: CustomerBooking[] = resData.bookings.map((b: SanityBookingRecord) => ({
+            id: b._id,
+            providerName: b.providerName || "Local Pro",
+            providerInitial: (b.providerName || "P").charAt(0).toUpperCase(),
+            serviceTitle: b.serviceTitle || b.agreedPackageName || "Service Booking",
+            serviceSlug: b.serviceSlug || "service",
+            packageName: b.agreedPackageName || "Standard Package",
+            scope: b.agreedScope || "Requested service appointment",
+            price: b.agreedPrice || 0,
+            scheduledTime: b.scheduledTime || new Date().toISOString(),
+            address: b.serviceAddress || "Accra, Ghana",
+            status: b.jobStatus || "requested",
+            paymentStatus: b.paymentStatus || "unpaid",
+          }));
+
+          if (liveItems.length > 0) {
+            setBookings((prev) => {
+              // Combine live bookings first, then any non-duplicate local items
+              const liveIds = new Set(liveItems.map((item) => item.id));
+              const remaining = prev.filter((item) => !liveIds.has(item.id));
+              const merged = [...liveItems, ...remaining];
+              if (typeof window !== "undefined") {
+                localStorage.setItem("fixit_customer_bookings", JSON.stringify(merged));
+              }
+              return merged;
+            });
+          }
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch customer bookings:", err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isSignedIn]);
+
   const [filter, setFilter] = React.useState<string>("all");
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
 
@@ -149,10 +212,20 @@ export function BookingsView() {
     }
   };
 
-  const handleCancelBooking = (id: string) => {
+  const handleCancelBooking = async (id: string) => {
     const updated = bookings.map((b) => (b.id === id ? { ...b, status: "cancelled" as const } : b));
     saveBookings(updated);
-    showToast(`Booking #${id} has been cancelled.`);
+    showToast(`Booking #${id.slice(0, 8)} has been cancelled.`);
+
+    try {
+      await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id, jobStatus: "cancelled" }),
+      });
+    } catch (err) {
+      console.warn("Failed to sync cancellation to server", err);
+    }
   };
 
   const handleOpenReview = (booking: CustomerBooking) => {
