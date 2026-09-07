@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { revalidatePath } from 'next/cache'
+import { checkAdminAccess } from '@/lib/auth/admin'
 import { getServerClient } from '@/sanity/lib/server-client'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const { userId } = await auth()
+    const { isAdmin, userId } = await checkAdminAccess()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
     }
 
     const client = getServerClient()
@@ -21,6 +27,7 @@ export async function GET() {
         status,
         serviceAreas,
         "categoryTitle": category->title,
+        "categorySlug": category->slug.current,
         "providerName": provider->displayName,
         "providerVerified": provider->verified,
         _createdAt
@@ -39,9 +46,12 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { userId } = await auth()
+    const { isAdmin, userId } = await checkAdminAccess()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -63,10 +73,28 @@ export async function PATCH(request: Request) {
 
     const client = getServerClient({ useWriteToken: true })
 
+    // Find service category slug for targeted cache revalidation
+    const service = await client.fetch<{ categorySlug?: string } | null>(
+      `*[_type == "service" && _id == $serviceId][0]{ "categorySlug": category->slug.current }`,
+      { serviceId }
+    )
+
     await client
       .patch(serviceId)
       .set({ status })
       .commit()
+
+    // Revalidate category and marketplace paths
+    try {
+      if (service?.categorySlug) {
+        revalidatePath(`/categories/${service.categorySlug}`)
+      }
+      revalidatePath('/categories/[slug]', 'page')
+      revalidatePath('/')
+      revalidatePath('/search')
+    } catch (revalErr) {
+      console.warn('[ADMIN_REVALIDATE_WARN]', revalErr)
+    }
 
     return NextResponse.json({
       success: true,
@@ -82,3 +110,4 @@ export async function PATCH(request: Request) {
     )
   }
 }
+

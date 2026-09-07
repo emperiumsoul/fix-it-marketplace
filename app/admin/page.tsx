@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
+  ShieldAlert,
   Clock,
   AlertCircle,
   Users,
@@ -16,6 +17,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 import { PublicHeader } from "@/components/navigation/public-header";
 import { Footer } from "@/components/navigation/footer";
 
@@ -52,6 +54,10 @@ interface ServiceItem {
 }
 
 export default function AdminDashboardPage() {
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const userIsAdminRole = user?.publicMetadata?.role === "admin";
+  const [isAdminFromApi, setIsAdminFromApi] = React.useState<boolean | null>(null);
+
   const [activeTab, setActiveTab] = React.useState<"providers" | "services">("providers");
   const [providers, setProviders] = React.useState<ProviderItem[]>([]);
   const [services, setServices] = React.useState<ServiceItem[]>([]);
@@ -66,7 +72,34 @@ export default function AdminDashboardPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  React.useEffect(() => {
+    if (!isUserLoaded || !user) return;
+    if (userIsAdminRole) return;
+    let isCancelled = false;
+    fetch("/api/admin/check")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isCancelled) setIsAdminFromApi(!!data?.isAdmin);
+      })
+      .catch(() => {
+        if (!isCancelled) setIsAdminFromApi(false);
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, isUserLoaded, userIsAdminRole]);
+
+  const isAdmin: boolean | null = !isUserLoaded
+    ? null
+    : !user
+    ? false
+    : userIsAdminRole
+    ? true
+    : isAdminFromApi;
+
   const fetchData = React.useCallback(() => {
+    if (isAdmin !== true) return;
+    setIsLoading(true);
     Promise.all([
       fetch("/api/admin/providers").then((r) => r.json()),
       fetch("/api/admin/services").then((r) => r.json()),
@@ -82,11 +115,30 @@ export default function AdminDashboardPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [isAdmin]);
 
   React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isAdmin !== true) return;
+    let isCancelled = false;
+    Promise.all([
+      fetch("/api/admin/providers").then((r) => r.json()),
+      fetch("/api/admin/services").then((r) => r.json()),
+    ])
+      .then(([pData, sData]) => {
+        if (isCancelled) return;
+        if (pData?.success) setProviders(pData.providers || []);
+        if (sData?.success) setServices(sData.services || []);
+      })
+      .catch((err) => {
+        console.error("Failed to load admin data:", err);
+      })
+      .finally(() => {
+        if (!isCancelled) setIsLoading(false);
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [isAdmin]);
 
   const handleUpdateProviderStatus = async (
     providerId: string,
@@ -195,6 +247,53 @@ export default function AdminDashboardPage() {
     if (statusFilter === "draft") return s.status === "draft";
     return true;
   });
+
+  if (!isUserLoaded || isAdmin === null) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#F7F7F8] font-sans">
+        <PublicHeader />
+        <main className="flex-1 flex flex-col items-center justify-center p-12 text-[#74767E] gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#18181B]" />
+          <span className="text-[14px]">Verifying administrator credentials...</span>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#F7F7F8] font-sans">
+        <PublicHeader />
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto my-16">
+          <div className="w-14 h-14 rounded-full bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center mb-4">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <h1 className="font-grotesque font-bold text-[24px] text-[#222325]">
+            Access Restricted
+          </h1>
+          <p className="text-[14px] text-[#62646A] mt-2 leading-relaxed">
+            The Fix it administration panel is strictly reserved for verified marketplace administrators. Your account does not have administrator privileges.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/"
+              className="px-5 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs"
+            >
+              Return to Marketplace
+            </Link>
+            <Link
+              href="/provider/dashboard"
+              className="px-4 py-2.5 rounded-[10px] bg-white border border-[#DADBDD] hover:border-[#18181B] text-[#222325] text-[14px] font-semibold transition-colors cursor-pointer"
+            >
+              Provider Dashboard
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F7F8] font-sans">

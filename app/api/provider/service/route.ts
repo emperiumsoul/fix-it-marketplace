@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { auth } from '@clerk/nextjs/server'
 import { getServerClient } from '@/sanity/lib/server-client'
+
+export const dynamic = 'force-dynamic'
 
 function slugify(text: string): string {
   return text
@@ -25,6 +28,7 @@ export async function POST(request: Request) {
     const {
       title,
       categoryName,
+      categorySlug,
       startingPrice = 150,
       description = '',
       serviceArea = 'Accra',
@@ -50,16 +54,46 @@ export async function POST(request: Request) {
       )
     }
 
-    // 2. Find matching category or fallback to first available category
-    const catQuery = categoryName ? categoryName.toLowerCase() : 'home'
-    let category = await client.fetch<{ _id: string } | null>(
-      `*[_type == "category" && (lower(title) match $cat || slug.current match $cat)][0]{ _id }`,
-      { cat: `*${catQuery}*` }
+    // 2. Find matching category
+    const targetSlug = categorySlug || ''
+    const targetTitle = categoryName || ''
+
+    const tradeKeywords: Record<string, string> = {
+      cleaning: 'clean*',
+      'house-cleaning': 'clean*',
+      plumbing: 'plumb*',
+      electrical: 'electr*',
+      'electrical-repairs': 'electr*',
+      painting: 'paint*',
+      'painting-decorating': 'paint*',
+      moving: 'mov*',
+      'moving-relocation': 'mov*',
+      gardening: 'garden*',
+      'gardening-landscaping': 'garden*',
+      'furniture-assembly': 'assembl*',
+      assembly: 'assembl*',
+      'appliance-home-repairs': 'repair*',
+      'home-repairs': 'repair*',
+    }
+
+    const keyword =
+      tradeKeywords[targetSlug] ||
+      (targetTitle ? `*${targetTitle.split(' ')[0].toLowerCase()}*` : '*home*')
+
+    let category = await client.fetch<{ _id: string; slug: string } | null>(
+      `*[_type == "category" && (
+        slug.current == $targetSlug ||
+        slug.current in [$targetSlug, "house-" + $targetSlug, $targetSlug + "-repairs", $targetSlug + "-landscaping", $targetSlug + "-decorating", $targetSlug + "-relocation"] ||
+        title == $targetTitle ||
+        lower(title) match $keyword ||
+        lower(slug.current) match $keyword
+      )][0]{ _id, "slug": slug.current }`,
+      { targetSlug, targetTitle, keyword }
     )
 
     if (!category) {
-      category = await client.fetch<{ _id: string } | null>(
-        `*[_type == "category"][0]{ _id }`
+      category = await client.fetch<{ _id: string; slug: string } | null>(
+        `*[_type == "category"][0]{ _id, "slug": slug.current }`
       )
     }
 
@@ -115,6 +149,21 @@ export async function POST(request: Request) {
     }
 
     const created = await client.create(serviceDoc)
+
+    // Revalidate paths so the service immediately appears in category listings
+    try {
+      if (category?.slug) {
+        revalidatePath(`/categories/${category.slug}`)
+      }
+      if (targetSlug && targetSlug !== category?.slug) {
+        revalidatePath(`/categories/${targetSlug}`)
+      }
+      revalidatePath('/categories/[slug]', 'page')
+      revalidatePath('/')
+      revalidatePath('/search')
+    } catch (revalErr) {
+      console.warn('[PROVIDER_SERVICE_REVALIDATE_WARN]', revalErr)
+    }
 
     return NextResponse.json({ success: true, serviceId: created._id })
   } catch (error) {

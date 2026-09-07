@@ -174,6 +174,7 @@ function DashboardInner() {
   const handleSaveService = async (service: {
     title: string;
     category: string;
+    categorySlug?: string;
     price: number;
     description: string;
     area: string;
@@ -185,6 +186,7 @@ function DashboardInner() {
         body: JSON.stringify({
           title: service.title,
           categoryName: service.category,
+          categorySlug: service.categorySlug,
           startingPrice: service.price,
           description: service.description,
           serviceArea: service.area,

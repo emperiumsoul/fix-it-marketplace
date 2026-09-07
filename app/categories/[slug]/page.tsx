@@ -16,6 +16,8 @@ import { HelpOptions } from "@/components/category/help-options";
 import { Footer } from "@/components/navigation/footer";
 import { getCategoryPreset } from "@/components/category/category-data-presets";
 
+export const dynamic = "force-dynamic";
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -27,6 +29,24 @@ const CATEGORY_SLUG_MAP: Record<string, string> = {
   moving: "moving-relocation",
   gardening: "gardening-landscaping",
   "home-repairs": "appliance-home-repairs",
+};
+
+const CATEGORY_KEYWORD_MAP: Record<string, string> = {
+  cleaning: "clean*",
+  "house-cleaning": "clean*",
+  plumbing: "plumb*",
+  electrical: "electr*",
+  "electrical-repairs": "electr*",
+  painting: "paint*",
+  "painting-decorating": "paint*",
+  moving: "mov*",
+  "moving-relocation": "mov*",
+  gardening: "garden*",
+  "gardening-landscaping": "garden*",
+  "furniture-assembly": "assembl*",
+  assembly: "assembl*",
+  "home-repairs": "repair*",
+  "appliance-home-repairs": "repair*",
 };
 
 export async function generateMetadata({
@@ -133,12 +153,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     } | null;
   }
 
+  const tradeKeyword = CATEGORY_KEYWORD_MAP[slug] || CATEGORY_KEYWORD_MAP[mappedSlug] || "";
+
   const services = await client.fetch<ServiceQueryDoc[]>(
     `*[_type == "service" && (
-      category->slug.current == $slug || 
-      category->slug.current == $mappedSlug ||
+      category->slug.current in [$slug, $mappedSlug, "house-" + $slug, $slug + "-repairs", $slug + "-landscaping", $slug + "-decorating", $slug + "-relocation"] ||
       category._ref == $categoryId ||
-      lower(category->title) match $catLower
+      lower(category->title) match $catLower ||
+      lower(category->slug.current) match $catLower ||
+      ($tradeKeyword != "" && (
+        lower(title) match $tradeKeyword ||
+        lower(summary) match $tradeKeyword
+      ))
     ) && status == "published"] | order(_createdAt desc){
       _id,
       title,
@@ -164,6 +190,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       mappedSlug,
       categoryId,
       catLower: categoryTitle.toLowerCase(),
+      tradeKeyword,
     }
   );
 

@@ -90,6 +90,26 @@ export function PublicHeader({
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState(initialQuery);
+  const userIsAdminRole = user?.publicMetadata?.role === "admin";
+  const [isAdminFromApi, setIsAdminFromApi] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user || userIsAdminRole) return;
+    let isCancelled = false;
+    fetch("/api/admin/check")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isCancelled && data?.isAdmin) {
+          setIsAdminFromApi(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, userIsAdminRole]);
+
+  const isAdmin = userIsAdminRole || isAdminFromApi;
 
   const handleBecomeProvider = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -196,12 +216,14 @@ export function PublicHeader({
                 Bookings
               </Link>
 
-              <Link
-                href="/admin"
-                className="hover:text-[#222325] text-[12px] font-semibold px-2.5 py-1 rounded-[6px] bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB] transition-colors ml-1"
-              >
-                Admin
-              </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="hover:text-[#222325] text-[12px] font-semibold px-2.5 py-1 rounded-[6px] bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB] transition-colors ml-1"
+                >
+                  Admin
+                </Link>
+              )}
             </div>
           </Show>
 
@@ -299,13 +321,15 @@ export function PublicHeader({
             >
               Saved Services
             </Link>
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-[#222325]"
-            >
-              Admin Operations
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5 hover:text-[#222325] text-[#008744] font-semibold"
+              >
+                Admin Operations
+              </Link>
+            )}
           </Show>
           <Link
             href="/search"

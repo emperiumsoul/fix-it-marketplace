@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { checkAdminAccess } from '@/lib/auth/admin'
 import { getServerClient } from '@/sanity/lib/server-client'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const { userId } = await auth()
+    const { isAdmin, userId } = await checkAdminAccess()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
     }
 
     const client = getServerClient()
@@ -43,9 +48,12 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { userId } = await auth()
+    const { isAdmin, userId } = await checkAdminAccess()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
     }
 
     const body = await request.json()

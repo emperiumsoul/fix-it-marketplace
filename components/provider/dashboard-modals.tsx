@@ -261,12 +261,24 @@ export function PortfolioModal({ isOpen, onClose, onSave }: PortfolioModalProps)
 // ==========================================
 // 3. Create Service Modal
 // ==========================================
+export const GHANA_SERVICE_CATEGORIES = [
+  { slug: "house-cleaning", title: "House Cleaning" },
+  { slug: "plumbing", title: "Plumbing" },
+  { slug: "electrical-repairs", title: "Electrical Repairs" },
+  { slug: "painting-decorating", title: "Painting & Decorating" },
+  { slug: "moving-relocation", title: "Moving & Relocation" },
+  { slug: "furniture-assembly", title: "Furniture Assembly" },
+  { slug: "gardening-landscaping", title: "Gardening & Landscaping" },
+  { slug: "appliance-home-repairs", title: "Appliance & Home Repairs" },
+];
+
 export interface CreateServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (service: {
     title: string;
     category: string;
+    categorySlug?: string;
     price: number;
     description: string;
     area: string;
@@ -275,7 +287,7 @@ export interface CreateServiceModalProps {
 
 export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceModalProps) {
   const [title, setTitle] = React.useState("");
-  const [category, setCategory] = React.useState("House Cleaning");
+  const [categorySlug, setCategorySlug] = React.useState("house-cleaning");
   const [price, setPrice] = React.useState("150");
   const [area, setArea] = React.useState("Accra & Greater Accra");
   const [description, setDescription] = React.useState("");
@@ -285,9 +297,13 @@ export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceMod
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    const selectedCat =
+      GHANA_SERVICE_CATEGORIES.find((c) => c.slug === categorySlug) ||
+      GHANA_SERVICE_CATEGORIES[0];
     onSave({
       title,
-      category,
+      category: selectedCat.title,
+      categorySlug: selectedCat.slug,
       price: Number(price) || 150,
       description,
       area,
@@ -341,18 +357,15 @@ export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceMod
                 Category
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#DADBDD] text-[14px] text-[#222325] focus:outline-hidden focus:border-[#222325] bg-white"
+                value={categorySlug}
+                onChange={(e) => setCategorySlug(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#DADBDD] text-[14px] text-[#222325] focus:outline-hidden focus:border-[#222325] bg-white cursor-pointer"
               >
-                <option value="House Cleaning">House Cleaning</option>
-                <option value="Plumbing">Plumbing</option>
-                <option value="Electrical Repairs">Electrical Repairs</option>
-                <option value="Painting">Painting</option>
-                <option value="Moving Services">Moving Services</option>
-                <option value="Furniture Assembly">Furniture Assembly</option>
-                <option value="Gardening & Lawn Care">Gardening & Lawn Care</option>
-                <option value="Home Repairs">Home Repairs</option>
+                {GHANA_SERVICE_CATEGORIES.map((cat) => (
+                  <option key={cat.slug} value={cat.slug}>
+                    {cat.title}
+                  </option>
+                ))}
               </select>
             </div>
 
