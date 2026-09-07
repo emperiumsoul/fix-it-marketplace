@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Star, MapPin, Home, Wrench, Zap, Paintbrush, Truck, Leaf, Hammer } from "lucide-react";
 import { ServiceDetailData } from "./types";
@@ -90,9 +91,21 @@ export function ServiceDetailView({ data }: ServiceDetailViewProps) {
         {/* Provider Subtitle Row matching 5.png */}
         <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3 text-[13px] sm:text-[14px]">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#008744] flex items-center justify-center text-white shrink-0">
-              {renderTradeIcon()}
-            </div>
+            {data.provider?.photoUrl ? (
+              <div className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[#DADBDD]">
+                <Image
+                  src={data.provider.photoUrl}
+                  alt={cleanProvider}
+                  fill
+                  sizes="28px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-[#008744] flex items-center justify-center text-white shrink-0">
+                {renderTradeIcon()}
+              </div>
+            )}
             <span className="font-semibold text-[#222325]">{cleanProvider}</span>
           </div>
 

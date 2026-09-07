@@ -71,14 +71,12 @@ export function CategoryServicesList({
                 title={service.title}
                 category={service.categoryTitle || categoryTitle}
                 providerName={service.provider?.displayName || "Local Specialist"}
+                providerPhotoUrl={service.provider?.photoUrl}
                 isVerified={isVerified}
                 price={service.startingPrice}
                 currency={service.currency === "GHS" ? "GH₵" : service.currency || "GH₵"}
                 location={loc}
-                imageUrl={
-                  service.coverImageUrl ||
-                  "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80"
-                }
+                imageUrl={service.coverImageUrl || service.provider?.photoUrl}
                 isSample={false}
               />
             );

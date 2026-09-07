@@ -12,6 +12,7 @@ export interface ServiceCardProps {
   title: string;
   category?: string;
   providerName?: string;
+  providerPhotoUrl?: string;
   isVerified?: boolean;
   price: number;
   currency?: string;
@@ -29,16 +30,22 @@ export function ServiceCard({
   title = "Home cleaning",
   category,
   providerName,
+  providerPhotoUrl,
   isVerified = false,
   price = 150,
   currency = "GH₵",
   rating = 4.8,
   reviewCount = 120,
   location = "Accra",
-  imageUrl = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80",
+  imageUrl,
   isSample = true,
   onSave,
 }: ServiceCardProps) {
+  const displayImage =
+    imageUrl ||
+    providerPhotoUrl ||
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80";
+
   const itemKey = id || slug || title;
   const [saved, setSaved] = React.useState(() => {
     if (typeof window !== "undefined") {
@@ -104,12 +111,13 @@ export function ServiceCard({
             title,
             category,
             providerName,
+            providerPhotoUrl,
             price,
             currency,
             rating,
             reviewCount,
             location,
-            imageUrl,
+            imageUrl: displayImage,
             isSample,
           };
           if (!list.some((item: { id?: string; slug?: string; title?: string }) => (item.id || item.slug || item.title) === itemKey)) {
@@ -139,7 +147,7 @@ export function ServiceCard({
         {slug ? (
           <Link href={`/services/${slug}`} className="block relative w-full h-full">
             <Image
-              src={imageUrl}
+              src={displayImage}
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
@@ -148,7 +156,7 @@ export function ServiceCard({
           </Link>
         ) : (
           <Image
-            src={imageUrl}
+            src={displayImage}
             alt={title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
@@ -188,10 +196,29 @@ export function ServiceCard({
         </h3>
 
         {providerName && (
-          <div className="text-[13px] text-[#62646A] -mt-1 flex items-center flex-wrap gap-1.5">
-            <span>By <span className="font-medium text-[#222325]">{providerName}</span></span>
+          <div className="text-[13px] text-[#62646A] -mt-1 flex items-center flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {providerPhotoUrl ? (
+                <div className="relative w-5 h-5 rounded-full overflow-hidden shrink-0 border border-[#DADBDD]">
+                  <Image
+                    src={providerPhotoUrl}
+                    alt={providerName}
+                    fill
+                    sizes="20px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-[#E8F8F0] text-[#008744] flex items-center justify-center text-[10px] font-bold shrink-0">
+                  {providerName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="truncate">
+                By <span className="font-medium text-[#222325]">{providerName}</span>
+              </span>
+            </div>
             {isVerified && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#008744] bg-[#E8F8F0] px-1.5 py-0.5 rounded-[4px]">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#008744] bg-[#E8F8F0] px-1.5 py-0.5 rounded-[4px] shrink-0">
                 <ShieldCheck className="w-3 h-3 stroke-[2.5]" /> Verified
               </span>
             )}

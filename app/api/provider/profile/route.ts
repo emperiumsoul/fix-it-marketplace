@@ -270,9 +270,18 @@ export async function POST(request: Request) {
           _type: 'reference',
           _ref: category._id,
         }
-        if (category.image) {
-          serviceDoc.coverImage = category.image
+      }
+
+      if (photoAssetId) {
+        serviceDoc.coverImage = {
+          _type: 'image',
+          asset: {
+            _type: 'reference',
+            _ref: photoAssetId,
+          },
         }
+      } else if (category?.image) {
+        serviceDoc.coverImage = category.image
       }
 
       await client.create(serviceDoc)

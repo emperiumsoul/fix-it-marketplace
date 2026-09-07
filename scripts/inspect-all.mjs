@@ -17,6 +17,7 @@ async function main() {
       expertise,
       onboardingStatus,
       verified,
+      "photoUrl": photo.asset->url,
       "services": *[_type == "service" && (provider._ref == ^._id || provider->clerkUserId == ^.clerkUserId)]{
         _id,
         title,
@@ -43,6 +44,7 @@ async function main() {
   for (const p of data.result.providers) {
     console.log(`\nProvider: ${p.displayName} (Clerk ID: ${p.clerkUserId})`);
     console.log(`  _id: ${p._id}, verified: ${p.verified}, onboarding: ${p.onboardingStatus}`);
+    console.log(`  Photo URL:`, p.photoUrl);
     console.log(`  Expertise:`, p.expertise);
     console.log(`  Services (${p.services?.length || 0}):`);
     p.services?.forEach(s => {

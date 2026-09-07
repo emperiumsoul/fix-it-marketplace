@@ -130,8 +130,9 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
 
       // Map gallery images
       const galleryImages: { url: string; alt: string }[] = [];
-      if (raw.coverImageUrl) {
-        galleryImages.push({ url: raw.coverImageUrl, alt: raw.title });
+      const primaryImage = raw.coverImageUrl || raw.provider?.photoUrl;
+      if (primaryImage) {
+        galleryImages.push({ url: primaryImage, alt: raw.title });
       }
       if (Array.isArray(raw.galleryUrls)) {
         raw.galleryUrls.forEach((u: string) => {
@@ -197,7 +198,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
         descriptionText,
         packages: raw.packages || [],
         faqs: raw.faqs || [],
-        coverImageUrl: raw.coverImageUrl,
+        coverImageUrl: raw.coverImageUrl || raw.provider?.photoUrl,
         galleryImages,
         recentProjects,
         relatedServices,

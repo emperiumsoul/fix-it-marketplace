@@ -256,6 +256,23 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     }
                   }
 
+                  let providerPhotoUrl: string | undefined = undefined;
+                  if (service.provider?.photo) {
+                    try {
+                      providerPhotoUrl = urlFor(service.provider.photo)
+                        .width(120)
+                        .height(120)
+                        .quality(80)
+                        .url();
+                    } catch {
+                      // Fall back
+                    }
+                  }
+
+                  if (!service.coverImage && providerPhotoUrl) {
+                    imageUrl = providerPhotoUrl;
+                  }
+
                   const loc = service.serviceAreas?.[0] || "Accra";
 
                   return (
@@ -266,11 +283,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       title={service.title}
                       category={service.categoryTitle}
                       providerName={service.provider?.displayName}
+                      providerPhotoUrl={providerPhotoUrl}
                       price={service.startingPrice}
                       currency={service.currency === "GHS" ? "GH₵" : service.currency || "GH₵"}
                       location={loc}
                       imageUrl={imageUrl}
-                      isSample={true}
+                      isSample={false}
                     />
                   );
                 })}
