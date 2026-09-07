@@ -15,25 +15,33 @@ export function DashboardHeader({ activeTab = "overview", onSelectTab }: Dashboa
   const initial = (user?.firstName || user?.username || "K").charAt(0).toUpperCase();
 
   const userIsAdminRole = user?.publicMetadata?.role === "admin";
-  const [isAdminApi, setIsAdminApi] = React.useState(false);
+  const [isAdminApi, setIsAdminApi] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
-    if (!user || userIsAdminRole) return;
+    if (!user) return;
     let isCancelled = false;
     fetch("/api/admin/check")
       .then((res) => res.json())
       .then((data) => {
-        if (!isCancelled && data?.isAdmin) {
-          setIsAdminApi(true);
+        if (!isCancelled) {
+          setIsAdminApi(Boolean(data?.isAdmin));
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!isCancelled) {
+          setIsAdminApi(false);
+        }
+      });
     return () => {
       isCancelled = true;
     };
-  }, [user, userIsAdminRole]);
+  }, [user]);
 
-  const isAdmin = userIsAdminRole || isAdminApi;
+  const isAdmin = !user
+    ? false
+    : isAdminApi !== null
+    ? isAdminApi
+    : Boolean(userIsAdminRole);
 
   const [activeMenu, setActiveMenu] = React.useState<string | null>(null);
 

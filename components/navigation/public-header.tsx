@@ -91,25 +91,34 @@ export function PublicHeader({
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState(initialQuery);
   const userIsAdminRole = user?.publicMetadata?.role === "admin";
-  const [isAdminFromApi, setIsAdminFromApi] = React.useState(false);
+  const [isAdminFromApi, setIsAdminFromApi] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
-    if (!user || userIsAdminRole) return;
+    if (!user) return;
     let isCancelled = false;
     fetch("/api/admin/check")
       .then((res) => res.json())
       .then((data) => {
-        if (!isCancelled && data?.isAdmin) {
-          setIsAdminFromApi(true);
+        if (!isCancelled) {
+          setIsAdminFromApi(Boolean(data?.isAdmin));
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!isCancelled) {
+          setIsAdminFromApi(false);
+        }
+      });
     return () => {
       isCancelled = true;
     };
-  }, [user, userIsAdminRole]);
+  }, [user]);
 
-  const isAdmin = userIsAdminRole || isAdminFromApi;
+  // Authoritative live API check overrides stale cached session token; initial fallback to userIsAdminRole
+  const isAdmin = !user
+    ? false
+    : isAdminFromApi !== null
+    ? isAdminFromApi
+    : Boolean(userIsAdminRole);
   const isProvider =
     user?.unsafeMetadata?.role === "provider" ||
     isAdmin ||

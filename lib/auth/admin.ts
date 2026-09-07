@@ -9,10 +9,11 @@ export interface AdminCheckResult {
 
 /**
  * Checks if the currently authenticated user has admin privileges.
- * Admin criteria:
- * 1. publicMetadata.role === 'admin'
- * 2. Primary email matches process.env.ADMIN_EMAILS (or default admin: emmanuelopokunyame@gmail.com)
- * 3. User ID matches process.env.ADMIN_USER_IDS
+ * 1. Live Clerk publicMetadata.role === 'admin' (Primary manual source of truth)
+ * 2. Optional: process.env.ADMIN_EMAILS (only if explicitly configured in env)
+ * 3. Optional: process.env.ADMIN_USER_IDS
+ *
+ * NOTE: Never automatically overwrites or writes to Clerk metadata behind the user's back.
  */
 export async function checkAdminAccess(): Promise<AdminCheckResult> {
   try {
@@ -21,63 +22,63 @@ export async function checkAdminAccess(): Promise<AdminCheckResult> {
       return { isAdmin: false, userId: null }
     }
 
-    // 1. Check Clerk publicMetadata role
-    if (user.publicMetadata?.role === 'admin') {
-      return {
-        isAdmin: true,
-        userId: user.id,
-        email: user.emailAddresses?.[0]?.emailAddress,
+    // Fetch live user from Clerk Backend API to bypass cached session JWT tokens
+    // and reflect manual Clerk Dashboard edits immediately on page refresh
+    let liveUser = user
+    if (process.env.CLERK_SECRET_KEY) {
+      try {
+        const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+        liveUser = await clerk.users.getUser(user.id)
+      } catch (e) {
+        console.warn('[ADMIN_LIVE_USER_FETCH_FALLBACK]', e)
       }
     }
 
-    // 2. Check ADMIN_EMAILS environment variable / default admin list
-    const adminEmailsConfig = process.env.ADMIN_EMAILS || 'emmanuelopokunyame@gmail.com'
-    const allowedAdminEmails = adminEmailsConfig
-      .split(',')
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean)
+    const userEmail = liveUser.emailAddresses?.[0]?.emailAddress?.toLowerCase()
 
-    const userEmail = user.emailAddresses?.[0]?.emailAddress?.toLowerCase()
-    if (userEmail && allowedAdminEmails.includes(userEmail)) {
-      // Auto-synchronize role in publicMetadata if not set
-      try {
-        if (process.env.CLERK_SECRET_KEY) {
-          const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
-          await clerk.users.updateUserMetadata(user.id, {
-            publicMetadata: {
-              ...user.publicMetadata,
-              role: 'admin',
-            },
-          })
-        }
-      } catch (syncErr) {
-        console.warn('[ADMIN_AUTH_SYNC_WARNING]', syncErr)
-      }
-
+    // 1. Check Clerk publicMetadata role (Live from Clerk Dashboard)
+    if (liveUser.publicMetadata?.role === 'admin') {
       return {
         isAdmin: true,
-        userId: user.id,
+        userId: liveUser.id,
         email: userEmail,
       }
     }
 
-    // 3. Check ADMIN_USER_IDS
+    // 2. Check explicit ADMIN_EMAILS environment variable (optional secondary check, NO auto-sync)
+    const adminEmailsConfig = process.env.ADMIN_EMAILS
+    if (adminEmailsConfig && userEmail) {
+      const allowedAdminEmails = adminEmailsConfig
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean)
+
+      if (allowedAdminEmails.includes(userEmail)) {
+        return {
+          isAdmin: true,
+          userId: liveUser.id,
+          email: userEmail,
+        }
+      }
+    }
+
+    // 3. Check explicit ADMIN_USER_IDS (optional secondary check)
     const adminUserIds = (process.env.ADMIN_USER_IDS || '')
       .split(',')
       .map((id) => id.trim())
       .filter(Boolean)
 
-    if (adminUserIds.includes(user.id)) {
+    if (adminUserIds.includes(liveUser.id)) {
       return {
         isAdmin: true,
-        userId: user.id,
+        userId: liveUser.id,
         email: userEmail,
       }
     }
 
     return {
       isAdmin: false,
-      userId: user.id,
+      userId: liveUser.id,
       email: userEmail,
     }
   } catch (error) {
@@ -85,3 +86,4 @@ export async function checkAdminAccess(): Promise<AdminCheckResult> {
     return { isAdmin: false, userId: null }
   }
 }
+

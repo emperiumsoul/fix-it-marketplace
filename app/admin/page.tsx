@@ -74,12 +74,11 @@ export default function AdminDashboardPage() {
 
   React.useEffect(() => {
     if (!isUserLoaded || !user) return;
-    if (userIsAdminRole) return;
     let isCancelled = false;
     fetch("/api/admin/check")
       .then((res) => res.json())
       .then((data) => {
-        if (!isCancelled) setIsAdminFromApi(!!data?.isAdmin);
+        if (!isCancelled) setIsAdminFromApi(Boolean(data?.isAdmin));
       })
       .catch(() => {
         if (!isCancelled) setIsAdminFromApi(false);
@@ -87,15 +86,15 @@ export default function AdminDashboardPage() {
     return () => {
       isCancelled = true;
     };
-  }, [user, isUserLoaded, userIsAdminRole]);
+  }, [user, isUserLoaded]);
 
   const isAdmin: boolean | null = !isUserLoaded
     ? null
     : !user
     ? false
-    : userIsAdminRole
-    ? true
-    : isAdminFromApi;
+    : isAdminFromApi !== null
+    ? isAdminFromApi
+    : Boolean(userIsAdminRole);
 
   const fetchData = React.useCallback(() => {
     if (isAdmin !== true) return;
