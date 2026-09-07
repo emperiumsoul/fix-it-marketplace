@@ -110,6 +110,10 @@ export function PublicHeader({
   }, [user, userIsAdminRole]);
 
   const isAdmin = userIsAdminRole || isAdminFromApi;
+  const isProvider =
+    user?.unsafeMetadata?.role === "provider" ||
+    isAdmin ||
+    (typeof window !== "undefined" && localStorage.getItem("fixit_role") === "provider");
 
   const handleBecomeProvider = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -130,7 +134,7 @@ export function PublicHeader({
       localStorage.setItem("fixit_role_modal_dismissed", "true");
     }
     setMobileMenuOpen(false);
-    router.push("/provider/onboarding");
+    router.push("/provider/dashboard");
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -180,13 +184,33 @@ export function PublicHeader({
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-5 text-[14px] leading-[20px] font-medium text-[#404145]">
-          <button
-            type="button"
-            onClick={handleBecomeProvider}
-            className="hover:text-[#008744] transition-colors text-[13px] font-semibold text-[#008744] shrink-0 cursor-pointer"
-          >
-            Become a Provider
-          </button>
+          <Show when="signed-in">
+            {isProvider ? (
+              <Link
+                href="/provider/dashboard"
+                className="hover:text-[#008744] transition-colors text-[13px] font-semibold text-[#008744] shrink-0"
+              >
+                Provider Dashboard
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleBecomeProvider}
+                className="hover:text-[#008744] transition-colors text-[13px] font-semibold text-[#008744] shrink-0 cursor-pointer"
+              >
+                Become a Provider
+              </button>
+            )}
+          </Show>
+          <Show when="signed-out">
+            <button
+              type="button"
+              onClick={handleBecomeProvider}
+              className="hover:text-[#008744] transition-colors text-[13px] font-semibold text-[#008744] shrink-0 cursor-pointer"
+            >
+              Become a Provider
+            </button>
+          </Show>
 
           <Show when="signed-in">
             {/* Quick utility icons matching 4.png (only for authenticated users) */}
@@ -292,14 +316,24 @@ export function PublicHeader({
             </div>
           </form>
 
-          <button
-            type="button"
-            onClick={handleBecomeProvider}
-            className="py-1.5 text-[#008744] font-semibold text-left cursor-pointer"
-          >
-            Become a Provider
-          </button>
           <Show when="signed-in">
+            {isProvider ? (
+              <Link
+                href="/provider/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5 text-[#008744] font-semibold"
+              >
+                Provider Dashboard
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleBecomeProvider}
+                className="py-1.5 text-[#008744] font-semibold text-left cursor-pointer"
+              >
+                Become a Provider
+              </button>
+            )}
             <Link
               href="/bookings"
               onClick={() => setMobileMenuOpen(false)}
@@ -330,6 +364,15 @@ export function PublicHeader({
                 Admin Operations
               </Link>
             )}
+          </Show>
+          <Show when="signed-out">
+            <button
+              type="button"
+              onClick={handleBecomeProvider}
+              className="py-1.5 text-[#008744] font-semibold text-left cursor-pointer"
+            >
+              Become a Provider
+            </button>
           </Show>
           <Link
             href="/search"

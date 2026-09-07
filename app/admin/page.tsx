@@ -327,6 +327,13 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <Link
+              href="/provider/dashboard"
+              className="px-3.5 py-2 rounded-[8px] bg-white border border-[#DADBDD] hover:border-[#008744] hover:text-[#008744] text-[13px] font-semibold text-[#222325] flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Briefcase className="w-3.5 h-3.5 text-[#008744]" />
+              Provider Dashboard
+            </Link>
             <button
               type="button"
               onClick={fetchData}

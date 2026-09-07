@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronDown, Bell, Mail, HelpCircle } from "lucide-react";
+import { ChevronDown, Bell, Mail, HelpCircle, Shield } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
 export interface DashboardHeaderProps {
@@ -13,6 +13,27 @@ export interface DashboardHeaderProps {
 export function DashboardHeader({ activeTab = "overview", onSelectTab }: DashboardHeaderProps) {
   const { user } = useUser();
   const initial = (user?.firstName || user?.username || "K").charAt(0).toUpperCase();
+
+  const userIsAdminRole = user?.publicMetadata?.role === "admin";
+  const [isAdminApi, setIsAdminApi] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!user || userIsAdminRole) return;
+    let isCancelled = false;
+    fetch("/api/admin/check")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isCancelled && data?.isAdmin) {
+          setIsAdminApi(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, userIsAdminRole]);
+
+  const isAdmin = userIsAdminRole || isAdminApi;
 
   const [activeMenu, setActiveMenu] = React.useState<string | null>(null);
 
@@ -161,11 +182,30 @@ export function DashboardHeader({ activeTab = "overview", onSelectTab }: Dashboa
                 </div>
               )}
             </div>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-[#008744] hover:text-[#005c2e] font-semibold flex items-center gap-1 transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin Operations</span>
+              </Link>
+            )}
           </nav>
         </div>
 
         {/* Right Side: Utility Icons & User Avatar with Green Active Dot */}
-        <div className="flex items-center gap-4 text-[#62646A]">
+        <div className="flex items-center gap-3 text-[#62646A]">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#18181B] bg-[#F3F4F6] hover:bg-[#E5E7EB] px-3 py-1.5 rounded-[8px] transition-colors border border-[#E5E7EB]"
+            >
+              <Shield className="w-3.5 h-3.5 text-[#008744]" />
+              <span>Admin Operations</span>
+            </Link>
+          )}
+
           <button
             type="button"
             aria-label="Notifications"
