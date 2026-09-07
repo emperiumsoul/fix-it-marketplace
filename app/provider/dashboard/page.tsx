@@ -21,8 +21,61 @@ import {
   SafetyGuideModal,
   PortfolioModal,
   CreateServiceModal,
+  VerifyIdentityModal,
+  ServiceAreasHoursModal,
+  PublishServiceModal,
 } from "@/components/provider/dashboard-modals";
 import { Footer } from "@/components/navigation/footer";
+
+interface DashboardData {
+  profile?: {
+    _id?: string;
+    displayName?: string;
+    headline?: string;
+    photoUrl?: string;
+    expertise?: string[];
+    languages?: string[];
+    serviceAreas?: string[];
+    availability?: string;
+  } | null;
+  services?: Array<{
+    _id: string;
+    title: string;
+    slug: string;
+    startingPrice: number;
+    currency?: string;
+    status?: string;
+    serviceAreas?: string[];
+    categoryTitle?: string;
+  }>;
+  bookings?: Array<{
+    _id: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    serviceTitle?: string;
+    agreedPackageName?: string;
+    agreedScope?: string;
+    agreedPrice?: number;
+    scheduledTime?: string;
+    serviceAddress?: string;
+    jobStatus?: "requested" | "confirmed" | "in_progress" | "completed" | "cancelled";
+    paymentStatus?: "paid" | "pending" | "unpaid";
+  }>;
+  metrics?: {
+    ordersCount: number;
+    newRequestsCount: number;
+    availableBalance: number;
+    pendingEscrow: number;
+    lifetimeEarned: number;
+    hasService: boolean;
+    isIdentityVerified?: boolean;
+    verificationStatus?: string;
+    isAreasHoursSet?: boolean;
+    isPublished?: boolean;
+    profileStrength: number;
+  };
+}
 
 function DashboardInner() {
   const router = useRouter();
@@ -40,6 +93,12 @@ function DashboardInner() {
   const [isGuideModalOpen, setIsGuideModalOpen] = React.useState(false);
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = React.useState(false);
   const [isCreateServiceModalOpen, setIsCreateServiceModalOpen] = React.useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = React.useState(false);
+  const [isAreasHoursModalOpen, setIsAreasHoursModalOpen] = React.useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = React.useState(false);
+
+  // Dynamic Dashboard Data State
+  const [data, setData] = React.useState<DashboardData | null>(null);
 
   // Completion states
   const [guideCompleted, setGuideCompleted] = React.useState(() => {
@@ -48,29 +107,34 @@ function DashboardInner() {
     }
     return false;
   });
-  const [serviceCompleted, setServiceCompleted] = React.useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("fixit_provider_service_completed") === "true";
-    }
-    return false;
-  });
+  const [serviceCompleted, setServiceCompleted] = React.useState(false);
   const [hasPortfolio, setHasPortfolio] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+
+  const fetchDashboardData = React.useCallback(() => {
+    fetch("/api/provider/dashboard-data")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData?.success) {
+          setData(resData);
+          if (resData.metrics?.hasService) {
+            setServiceCompleted(true);
+          }
+        }
+      })
+      .catch((err) => console.warn("Failed to load dashboard data:", err));
+  }, []);
+
+  React.useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   // Sync with user metadata if loaded later
   React.useEffect(() => {
     if (user?.unsafeMetadata?.safetyGuideCompleted && !guideCompleted) {
       setTimeout(() => setGuideCompleted(true), 0);
     }
-    if (user?.unsafeMetadata?.serviceCreated && !serviceCompleted) {
-      setTimeout(() => setServiceCompleted(true), 0);
-    }
-  }, [
-    user?.unsafeMetadata?.safetyGuideCompleted,
-    user?.unsafeMetadata?.serviceCreated,
-    guideCompleted,
-    serviceCompleted,
-  ]);
+  }, [user?.unsafeMetadata?.safetyGuideCompleted, guideCompleted]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -114,26 +178,56 @@ function DashboardInner() {
     description: string;
     area: string;
   }) => {
-    setServiceCompleted(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fixit_provider_service_completed", "true");
-    }
-    if (user) {
-      try {
-        await user.update({
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            serviceCreated: true,
-            primaryService: service.title,
-            startingPriceGhs: service.price,
-          },
-        });
-      } catch (e) {
-        console.error("Failed to update user metadata", e);
+    try {
+      const res = await fetch("/api/provider/service", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: service.title,
+          categoryName: service.category,
+          startingPrice: service.price,
+          description: service.description,
+          serviceArea: service.area,
+        }),
+      });
+
+      const resJson = await res.json();
+      if (!res.ok) {
+        showToast(resJson.error || "Failed to publish service");
+        return;
       }
+
+      setServiceCompleted(true);
+      fetchDashboardData();
+      showToast(`Service "${service.title}" published successfully!`);
+    } catch (e) {
+      console.error("Failed to publish service", e);
+      showToast("Error creating service");
     }
-    showToast(`Service "${service.title}" created successfully!`);
   };
+
+  // Derived real metrics
+  const ordersCount = data?.metrics?.ordersCount ?? 0;
+  const newRequestsCount = data?.metrics?.newRequestsCount ?? 0;
+  const availableBalance = data?.metrics?.availableBalance ?? 0;
+  const pendingEscrow = data?.metrics?.pendingEscrow ?? 0;
+  const lifetimeEarned = data?.metrics?.lifetimeEarned ?? 0;
+  const profileStrength = data?.metrics?.profileStrength ?? (serviceCompleted ? 8 : 4);
+
+  const bookingsList = data?.bookings || [];
+  const formattedOrders = bookingsList.map((b) => ({
+    id: b._id,
+    customerName: b.customerName || "Customer",
+    customerPhone: b.customerPhone || "Private",
+    serviceTitle: b.serviceTitle || "Service",
+    packageName: b.agreedPackageName || "Standard Package",
+    scope: b.agreedScope || "Standard service scope",
+    price: b.agreedPrice || 0,
+    scheduledTime: b.scheduledTime || new Date().toISOString(),
+    address: b.serviceAddress || "Accra, Ghana",
+    status: b.jobStatus || "requested",
+    paymentStatus: b.paymentStatus || "unpaid",
+  }));
 
   return (
     <div className="min-h-screen bg-[#F7F7F8] flex flex-col font-sans">
@@ -151,7 +245,7 @@ function DashboardInner() {
         )}
 
         {/* Profile Banner matching 7.png */}
-        <DashboardProfileBanner />
+        <DashboardProfileBanner profile={data?.profile} />
 
         {/* Tab Navigation Pill Bar */}
         <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-2">
@@ -186,7 +280,7 @@ function DashboardInner() {
                   : "bg-[#E5E7EB] text-[#404145]"
               }`}
             >
-              5
+              {ordersCount}
             </span>
           </button>
 
@@ -208,7 +302,7 @@ function DashboardInner() {
                   : "bg-[#E8F8F0] text-[#008744]"
               }`}
             >
-              GHS 882
+              GHS {availableBalance.toFixed(0)}
             </span>
           </button>
         </div>
@@ -228,10 +322,14 @@ function DashboardInner() {
                   </div>
                   <div>
                     <h4 className="font-grotesque font-bold text-[15px] text-[#222325]">
-                      5 Customer Orders
+                      {ordersCount} Customer Orders
                     </h4>
                     <p className="text-[12px] text-[#74767E]">
-                      1 new request awaiting your confirmation
+                      {newRequestsCount > 0
+                        ? `${newRequestsCount} new request awaiting confirmation`
+                        : ordersCount > 0
+                        ? "All booking requests up to date"
+                        : "No orders awaiting confirmation"}
                     </p>
                   </div>
                 </div>
@@ -250,10 +348,12 @@ function DashboardInner() {
                   </div>
                   <div>
                     <h4 className="font-grotesque font-bold text-[15px] text-[#222325]">
-                      GHS 882.00 Available
+                      GHS {availableBalance.toFixed(2)} Available
                     </h4>
                     <p className="text-[12px] text-[#74767E]">
-                      Cleared and ready for MoMo payout
+                      {availableBalance > 0
+                        ? "Cleared and ready for MoMo payout"
+                        : "Complete service jobs to earn"}
                     </p>
                   </div>
                 </div>
@@ -267,14 +367,22 @@ function DashboardInner() {
             <ProfileStrengthCard
               onAddPortfolio={() => setIsPortfolioModalOpen(true)}
               hasPortfolio={hasPortfolio}
+              score={profileStrength}
             />
 
             {/* Steps to get visible matching 7.png */}
             <VisibilityStepsCard
               onReadGuide={() => setIsGuideModalOpen(true)}
               onCreateService={() => setIsCreateServiceModalOpen(true)}
+              onVerifyIdentity={() => setIsVerifyModalOpen(true)}
+              onSetAreasAndHours={() => setIsAreasHoursModalOpen(true)}
+              onPublish={() => setIsPublishModalOpen(true)}
               guideCompleted={guideCompleted}
-              serviceCompleted={serviceCompleted}
+              serviceCompleted={serviceCompleted || Boolean(data?.metrics?.hasService)}
+              identityVerified={Boolean(data?.metrics?.isIdentityVerified)}
+              identityStatus={data?.metrics?.verificationStatus || "unverified"}
+              areasHoursCompleted={Boolean(data?.metrics?.isAreasHoursSet)}
+              isPublished={Boolean(data?.metrics?.isPublished)}
             />
           </div>
         )}
@@ -282,6 +390,7 @@ function DashboardInner() {
         {/* Tab 2: Orders Received */}
         {activeTab === "orders" && (
           <OrdersListView
+            orders={formattedOrders}
             initialStatusFilter={statusParam}
             onStatusChangeToast={showToast}
           />
@@ -289,7 +398,12 @@ function DashboardInner() {
 
         {/* Tab 3: Earnings & Payouts */}
         {activeTab === "earnings" && (
-          <EarningsView onWithdrawToast={showToast} />
+          <EarningsView
+            availableBalance={availableBalance}
+            pendingEscrow={pendingEscrow}
+            lifetimeEarned={lifetimeEarned}
+            onWithdrawToast={showToast}
+          />
         )}
       </main>
 
@@ -310,6 +424,39 @@ function DashboardInner() {
         isOpen={isCreateServiceModalOpen}
         onClose={() => setIsCreateServiceModalOpen(false)}
         onSave={handleSaveService}
+      />
+
+      <VerifyIdentityModal
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        onSuccess={() => {
+          fetchDashboardData();
+          showToast("Ghana Card identity verification approved!");
+        }}
+        currentStatus={data?.metrics?.verificationStatus}
+      />
+
+      <ServiceAreasHoursModal
+        isOpen={isAreasHoursModalOpen}
+        onClose={() => setIsAreasHoursModalOpen(false)}
+        onSuccess={() => {
+          fetchDashboardData();
+          showToast("Service areas and working hours saved!");
+        }}
+        initialAreas={data?.profile?.serviceAreas || []}
+        initialHours={data?.profile?.availability || "Mon - Sat: 8:00 AM - 6:00 PM"}
+      />
+
+      <PublishServiceModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        onSuccess={() => {
+          fetchDashboardData();
+          showToast("🎉 Your service is now live across Ghana!");
+        }}
+        hasService={Boolean(data?.metrics?.hasService || serviceCompleted)}
+        isIdentityVerified={Boolean(data?.metrics?.isIdentityVerified)}
+        isAreasHoursSet={Boolean(data?.metrics?.isAreasHoursSet)}
       />
 
       {/* Marketplace Global Footer */}

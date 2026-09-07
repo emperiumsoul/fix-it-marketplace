@@ -12,16 +12,34 @@ import {
 
 export interface EarningsViewProps {
   onWithdrawToast?: (msg: string) => void;
+  availableBalance?: number;
+  pendingEscrow?: number;
+  lifetimeEarned?: number;
+  transactions?: Array<{
+    id: string;
+    orderId: string;
+    date: string;
+    customer: string;
+    service: string;
+    gross: number;
+    fee: number;
+    net: number;
+    status: string;
+  }>;
 }
 
-export function EarningsView({ onWithdrawToast }: EarningsViewProps) {
+export function EarningsView({
+  onWithdrawToast,
+  availableBalance: externalBalance,
+  pendingEscrow = 0,
+  lifetimeEarned = 0,
+  transactions = [],
+}: EarningsViewProps) {
   const momoNumber = "024 551 8920";
   const network = "MTN Mobile Money";
-  const [availableBalance, setAvailableBalance] = React.useState(882);
+  const [withdrawnAmount, setWithdrawnAmount] = React.useState(0);
+  const availableBalance = Math.max(0, (externalBalance ?? 0) - withdrawnAmount);
   const [isWithdrawing, setIsWithdrawing] = React.useState(false);
-
-  const pendingEscrow = 1017;
-  const lifetimeEarned = 2120;
 
   const handleWithdraw = () => {
     if (availableBalance <= 0) return;
@@ -30,57 +48,10 @@ export function EarningsView({ onWithdrawToast }: EarningsViewProps) {
       onWithdrawToast?.(
         `Withdrawal of GHS ${availableBalance.toFixed(2)} sent to ${network} (${momoNumber}) successfully!`
       );
-      setAvailableBalance(0);
+      setWithdrawnAmount((prev) => prev + availableBalance);
       setIsWithdrawing(false);
     }, 1000);
   };
-
-  const transactions = [
-    {
-      id: "TXN-8821",
-      orderId: "BK-33910",
-      date: "02 Sep 2026",
-      customer: "Kofi Mensah",
-      service: "Post-Event Cleaning Service",
-      gross: 520,
-      fee: 52,
-      net: 468,
-      status: "Cleared",
-    },
-    {
-      id: "TXN-7714",
-      orderId: "BK-44821",
-      date: "10 Sep 2026",
-      customer: "Naa Ayeley",
-      service: "Deep Home Cleaning & Degreasing",
-      gross: 450,
-      fee: 45,
-      net: 405,
-      status: "Escrow Holding",
-    },
-    {
-      id: "TXN-6612",
-      orderId: "BK-77192",
-      date: "06 Sep 2026",
-      customer: "Kwabena Owusu",
-      service: "Move-Out Turnkey Sanitize",
-      gross: 680,
-      fee: 68,
-      net: 612,
-      status: "Escrow Holding",
-    },
-    {
-      id: "TXN-5509",
-      orderId: "BK-98124",
-      date: "14 Sep 2026",
-      customer: "Abena Osei",
-      service: "Residential House Cleaning",
-      gross: 360,
-      fee: 36,
-      net: 324,
-      status: "Pending Job Start",
-    },
-  ];
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -220,42 +191,51 @@ export function EarningsView({ onWithdrawToast }: EarningsViewProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F3F4F6] text-[#404145]">
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-[#F9FAFB] transition-colors">
-                  <td className="py-4 px-6 font-medium text-[#222325]">
-                    {tx.date}
-                    <span className="block text-[11px] font-mono text-[#74767E]">
-                      {tx.id}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className="font-semibold text-[#222325] block">
-                      {tx.customer}
-                    </span>
-                    <span className="text-[12px] text-[#74767E]">
-                      {tx.service} (#{tx.orderId})
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 font-medium">GHS {tx.gross.toFixed(2)}</td>
-                  <td className="py-4 px-6 text-[#74767E]">- GHS {tx.fee.toFixed(2)}</td>
-                  <td className="py-4 px-6 font-bold text-[#222325]">
-                    GHS {tx.net.toFixed(2)}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                        tx.status === "Cleared"
-                          ? "bg-[#E8F8F0] text-[#008744]"
-                          : tx.status === "Escrow Holding"
-                          ? "bg-[#FEF3C7] text-[#92400E]"
-                          : "bg-[#F3F4F6] text-[#71717A]"
-                      }`}
-                    >
-                      {tx.status}
-                    </span>
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-[#74767E]">
+                    <p className="text-[14px] font-medium text-[#222325]">No transactions recorded yet</p>
+                    <p className="text-[12px] mt-1 text-[#62646A]">Completed service bookings will appear here with payout status.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-[#F9FAFB] transition-colors">
+                    <td className="py-4 px-6 font-medium text-[#222325]">
+                      {tx.date}
+                      <span className="block text-[11px] font-mono text-[#74767E]">
+                        {tx.id}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="font-semibold text-[#222325] block">
+                        {tx.customer}
+                      </span>
+                      <span className="text-[12px] text-[#74767E]">
+                        {tx.service} (#{tx.orderId})
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 font-medium">GHS {tx.gross.toFixed(2)}</td>
+                    <td className="py-4 px-6 text-[#74767E]">- GHS {tx.fee.toFixed(2)}</td>
+                    <td className="py-4 px-6 font-bold text-[#222325]">
+                      GHS {tx.net.toFixed(2)}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          tx.status === "Cleared"
+                            ? "bg-[#E8F8F0] text-[#008744]"
+                            : tx.status === "Escrow Holding"
+                            ? "bg-[#FEF3C7] text-[#92400E]"
+                            : "bg-[#F3F4F6] text-[#71717A]"
+                        }`}
+                      >
+                        {tx.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

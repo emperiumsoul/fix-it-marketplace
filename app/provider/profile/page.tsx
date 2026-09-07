@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import Image from "next/image";
 import {
   ShieldCheck,
   Star,
@@ -17,147 +16,98 @@ import {
   Briefcase,
   Award,
   Share2,
+  Package,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/provider/dashboard-header";
 import { Footer } from "@/components/navigation/footer";
-import { detectTradeConfig } from "@/components/provider/onboarding-profile-view";
 
-const TRADE_PACKAGES: Record<
-  string,
-  {
-    title: string;
-    desc: string;
-    duration: string;
-    price: number;
-  }[]
-> = {
-  plumbing: [
-    {
-      title: "Routine Pipe & Leak Repair",
-      desc: "Repairing leaking washbasin traps, sink drain sealing, and tap washer replacement.",
-      duration: "~1 to 2 hours",
-      price: 180,
-    },
-    {
-      title: "Drain Snaking & Blockage Clearing",
-      desc: "Mechanical drain snaking of bathroom or kitchen waste lines and grease trap cleanout.",
-      duration: "~2 to 3 hours",
-      price: 350,
-    },
-    {
-      title: "Complete Bathroom / Kitchen Fixture Overhaul",
-      desc: "Installation and pressure testing of new faucets, P-traps, water heater lines, and shutoff valves.",
-      duration: "~4 to 6 hours",
-      price: 650,
-    },
-  ],
-  cleaning: [
-    {
-      title: "Standard Residential Maintenance Clean",
-      desc: "Dusting, vacuuming, floor mopping, kitchen surface degreasing, bathroom wash, and trash disposal.",
-      duration: "~2 to 3 hours",
-      price: 180,
-    },
-    {
-      title: "Intensive Deep Home Cleaning",
-      desc: "Deep limescale scrubbing, kitchen appliance interior cleaning (oven, fridge), window washing, and grout scrub.",
-      duration: "~4 to 6 hours",
-      price: 350,
-    },
-    {
-      title: "Move-In / Move-Out Turnkey Sanitize",
-      desc: "Full property deep sanitize before handover or tenant move-in, including cabinets and disinfection.",
-      duration: "Full day",
-      price: 600,
-    },
-  ],
-  electrical: [
-    {
-      title: "Diagnostic & Socket / Switch Replacement",
-      desc: "Troubleshooting dead circuits, replacing faulty wall sockets, switches, and earth wire checks.",
-      duration: "~1 to 2 hours",
-      price: 160,
-    },
-    {
-      title: "Breaker Panel & Distribution Board Re-balancing",
-      desc: "Diagnosing tripping MCB breakers, load balancing across 3-phase board, and surge protector installation.",
-      duration: "~2 to 4 hours",
-      price: 380,
-    },
-    {
-      title: "Whole-House Lighting & Ceiling Fan Installation",
-      desc: "Wiring and mounting up to 8 lighting points, chandeliers, or energy-efficient ceiling fans.",
-      duration: "~4 to 6 hours",
-      price: 600,
-    },
-  ],
-  painting: [
-    {
-      title: "Single Room Refresh & Minor Crack Patching",
-      desc: "Surface sanding, acrylic primer coat, and 2 finish coats on walls and ceiling of 1 standard room.",
-      duration: "1 day",
-      price: 250,
-    },
-    {
-      title: "Multi-Room Interior Painting (2-3 Bedrooms)",
-      desc: "Comprehensive surface preparation, skimming minor imperfections, and premium washable emulsion paint.",
-      duration: "2 to 3 days",
-      price: 750,
-    },
-    {
-      title: "Exterior Weatherproofing & Perimeter Wall Painting",
-      desc: "Pressure wash wall clean, waterproofing sealant primer, and mold-resistant exterior paint.",
-      duration: "3 to 4 days",
-      price: 1400,
-    },
-  ],
-};
+interface ProviderProfileData {
+  _id?: string;
+  displayName?: string;
+  headline?: string;
+  photoUrl?: string;
+  bioText?: string;
+  expertise?: string[];
+  languages?: string[];
+  serviceAreas?: string[];
+  rating?: number;
+  completedJobsCount?: number;
+  workExperience?: Array<{
+    _key?: string;
+    role?: string;
+    company?: string;
+    startDate?: string;
+    description?: string;
+  }>;
+  education?: Array<{
+    _key?: string;
+    degreeOrCertificate?: string;
+    institution?: string;
+    year?: string;
+  }>;
+  certifications?: Array<{
+    _key?: string;
+    title?: string;
+    issuingOrganization?: string;
+    issueDate?: string;
+  }>;
+}
+
+interface ServiceData {
+  _id: string;
+  title: string;
+  slug: string;
+  startingPrice: number;
+  currency: string;
+  status: string;
+  categoryTitle?: string;
+  packages?: Array<{
+    name: string;
+    description?: string;
+    price?: number;
+    scope?: string;
+  }>;
+}
 
 export default function ProviderProfilePage() {
   const { user } = useUser();
-
   const [copied, setCopied] = React.useState(false);
+  const [profile, setProfile] = React.useState<ProviderProfileData | null>(null);
+  const [services, setServices] = React.useState<ServiceData[]>([]);
 
-  // Derive provider attributes from metadata or sensible defaults
-  const meta = (user?.unsafeMetadata || {}) as {
-    displayName?: string;
-    headline?: string;
-    languages?: string[];
-    primaryService?: string;
-    startingPriceGhs?: number;
-    providerProfile?: {
-      displayName?: string;
-      headline?: string;
-      primaryService?: string;
-      languages?: string[];
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/provider/dashboard-data")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        if (data?.profile) setProfile(data.profile);
+        if (Array.isArray(data?.services)) setServices(data.services);
+      })
+      .catch((err) => console.warn("Failed to load provider profile:", err));
+
+    return () => {
+      isMounted = false;
     };
-  };
+  }, []);
 
   const displayName =
-    meta.providerProfile?.displayName ||
-    meta.displayName ||
+    profile?.displayName ||
     user?.fullName ||
     user?.firstName ||
-    "Clear";
+    "Provider";
 
   const username =
-    user?.username || (user?.firstName ? user.firstName.toLowerCase() : "ksoul1");
+    user?.username || (user?.firstName ? user.firstName.toLowerCase() : "provider");
 
-  const rawHeadline =
-    meta.providerProfile?.headline ||
-    meta.headline ||
-    meta.providerProfile?.primaryService ||
-    meta.primaryService ||
-    "Plumbing";
+  const headline =
+    profile?.headline || "Local Services Specialist";
 
-  const activeTrade = detectTradeConfig(rawHeadline);
-
-  const headline = rawHeadline;
-  const languages = meta.providerProfile?.languages || meta.languages || ["English", "Twi"];
-  const startingPrice = meta.startingPriceGhs || (activeTrade.id === "plumbing" ? 180 : 150);
-
-  const packages =
-    TRADE_PACKAGES[activeTrade.id] || TRADE_PACKAGES.plumbing;
+  const photoUrl = profile?.photoUrl || user?.imageUrl || "";
+  const languages = profile?.languages?.length ? profile.languages : ["English", "Twi"];
+  const serviceAreas = profile?.serviceAreas?.length ? profile.serviceAreas : ["Accra", "Greater Accra"];
+  const completedJobs = profile?.completedJobsCount || 0;
+  const rating = profile?.rating;
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -166,6 +116,8 @@ export default function ProviderProfilePage() {
       setTimeout(() => setCopied(false), 3000);
     }
   };
+
+  const primaryStartingPrice = services[0]?.startingPrice || 150;
 
   return (
     <div className="min-h-screen bg-[#F7F7F8] flex flex-col font-sans">
@@ -207,8 +159,16 @@ export default function ProviderProfilePage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Avatar with Available Presence indicator */}
             <div className="relative">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#3F3F46] text-white font-bold text-[32px] flex items-center justify-center border-4 border-white shadow-md">
-                {displayName.charAt(0).toUpperCase()}
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#3F3F46] text-white font-bold text-[32px] flex items-center justify-center border-4 border-white shadow-md overflow-hidden">
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{displayName.charAt(0).toUpperCase()}</span>
+                )}
               </div>
               <span
                 className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-[#008744] border-2 border-white"
@@ -234,14 +194,25 @@ export default function ProviderProfilePage() {
 
               {/* Badges & Meta */}
               <div className="flex flex-wrap items-center gap-4 text-[13px] text-[#62646A] mt-3">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-[#FFBE5B] text-[#FFBE5B]" />
-                  <span className="font-bold text-[#222325]">4.9</span>
-                  <span className="text-[#74767E]">(28 completed jobs)</span>
-                </div>
+                {completedJobs > 0 ? (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-[#FFBE5B] text-[#FFBE5B]" />
+                    <span className="font-bold text-[#222325]">
+                      {rating?.toFixed(1) || "5.0"}
+                    </span>
+                    <span className="text-[#74767E]">
+                      ({completedJobs} completed jobs)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-[#74767E]">
+                    <span className="font-medium text-[#222325]">New Provider</span>
+                    <span>• 0 completed jobs</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4 text-[#74767E]" />
-                  <span>Accra & Greater Accra, Ghana</span>
+                  <span>{serviceAreas.join(", ")}, Ghana</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Languages className="w-4 h-4 text-[#74767E]" />
@@ -258,7 +229,7 @@ export default function ProviderProfilePage() {
             </span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-grotesque font-bold text-[24px] text-[#222325]">
-                GHS {startingPrice}
+                GHS {primaryStartingPrice}
               </span>
               <span className="text-[13px] text-[#74767E]">/ session</span>
             </div>
@@ -277,15 +248,27 @@ export default function ProviderProfilePage() {
               <h2 className="font-grotesque font-bold text-[18px] text-[#222325] mb-3">
                 About {displayName}
               </h2>
-              <p className="text-[14px] text-[#404145] leading-relaxed">
-                Professional {activeTrade.label.toLowerCase()} specialist dedicated to delivering thorough, reliable services across Greater Accra. Equipped with professional tools, certified materials, and comprehensive technical training. Known for punctuality, attention to detail, and transparent pricing in Ghana Cedis.
-              </p>
+              {profile?.bioText ? (
+                <p className="text-[14px] text-[#404145] leading-relaxed whitespace-pre-line">
+                  {profile.bioText}
+                </p>
+              ) : (
+                <div className="p-4 rounded-[10px] bg-[#F9FAFB] border border-[#E5E7EB] text-[13px] text-[#74767E] flex items-center justify-between">
+                  <span>No bio provided yet. Complete your profile to introduce yourself to clients.</span>
+                  <Link
+                    href="/provider/onboarding"
+                    className="text-[#008744] font-semibold hover:underline"
+                  >
+                    Add bio
+                  </Link>
+                </div>
+              )}
 
               {/* Highlights */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#F3F4F6]">
                 <div className="flex items-center gap-2 text-[13px] text-[#222325]">
                   <CheckCircle2 className="w-4 h-4 text-[#008744]" />
-                  <span>Fully vetted Ghana Card identity verified</span>
+                  <span>Fully vetted identity verified</span>
                 </div>
                 <div className="flex items-center gap-2 text-[13px] text-[#222325]">
                   <CheckCircle2 className="w-4 h-4 text-[#008744]" />
@@ -297,127 +280,153 @@ export default function ProviderProfilePage() {
                 </div>
                 <div className="flex items-center gap-2 text-[13px] text-[#222325]">
                   <CheckCircle2 className="w-4 h-4 text-[#008744]" />
-                  <span>Free inspection & follow-up within 24 hours</span>
+                  <span>Direct booking confirmation</span>
                 </div>
               </div>
             </div>
 
             {/* Services & Packages Offered */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">
-              <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                Services & Packages Offered ({activeTrade.label})
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
+                  Services & Packages Offered
+                </h2>
+                <Link
+                  href="/provider/dashboard?tab=overview"
+                  className="text-[13px] font-semibold text-[#008744] hover:underline"
+                >
+                  + Add Service
+                </Link>
+              </div>
 
-              <div className="space-y-4">
-                {packages.map((pkg, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              {services.length > 0 ? (
+                <div className="space-y-4">
+                  {services.map((srv) => (
+                    <div
+                      key={srv._id}
+                      className="p-5 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] flex flex-col gap-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#008744] bg-[#E8F8F0] px-2 py-0.5 rounded-full">
+                            {srv.categoryTitle || "Service"}
+                          </span>
+                          <h3 className="font-grotesque font-bold text-[16px] text-[#222325] mt-1">
+                            {srv.title}
+                          </h3>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-grotesque font-bold text-[18px] text-[#222325]">
+                            GHS {srv.startingPrice}
+                          </span>
+                          <span className="text-[12px] text-[#74767E]">starting</span>
+                        </div>
+                      </div>
+
+                      {srv.packages && srv.packages.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#E5E7EB]">
+                          {srv.packages.map((pkg, pIdx) => (
+                            <div
+                              key={pIdx}
+                              className="p-3 bg-white rounded-[8px] border border-[#E5E7EB] text-[13px]"
+                            >
+                              <div className="font-semibold text-[#222325]">
+                                {pkg.name}
+                              </div>
+                              <div className="text-[12px] text-[#74767E] mt-0.5">
+                                {pkg.scope || pkg.description}
+                              </div>
+                              {pkg.price && (
+                                <div className="text-[#008744] font-bold mt-1 text-[12px]">
+                                  GHS {pkg.price}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 rounded-[12px] border border-dashed border-[#DADBDD] text-center flex flex-col items-center justify-center gap-2">
+                  <Package className="w-8 h-8 text-[#9CA3AF]" />
+                  <p className="text-[14px] font-medium text-[#222325]">
+                    No services published yet
+                  </p>
+                  <p className="text-[12px] text-[#74767E] max-w-sm">
+                    Create and publish your first service so customers across Accra can find and hire you.
+                  </p>
+                  <Link
+                    href="/provider/dashboard?tab=overview"
+                    className="mt-2 px-4 py-2 rounded-[8px] bg-[#18181B] text-white text-[13px] font-semibold hover:bg-[#27272A] transition-colors"
                   >
-                    <div>
-                      <h3 className="font-grotesque font-bold text-[15px] text-[#222325]">
-                        {pkg.title}
-                      </h3>
-                      <p className="text-[13px] text-[#62646A] mt-0.5 max-w-lg">
-                        {pkg.desc}
-                      </p>
-                      <span className="inline-block text-[12px] text-[#74767E] mt-1 font-medium">
-                        Duration: {pkg.duration}
-                      </span>
-                    </div>
-                    <div className="shrink-0 text-left sm:text-right">
-                      <span className="font-grotesque font-bold text-[18px] text-[#222325]">
-                        GHS {pkg.price}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Portfolio Showcase */}
-            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">
-              <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                Portfolio Showcase ({activeTrade.label})
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-[12px] border border-[#E5E7EB] overflow-hidden group">
-                  <div className="h-44 bg-[#F3F4F6] relative overflow-hidden">
-                    <Image
-                      src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80"
-                      alt="Project demonstration"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-grotesque font-bold text-[14px] text-[#222325]">
-                      Residential Project in Cantonments
-                    </h3>
-                    <p className="text-[12px] text-[#62646A] mt-1">
-                      Completed execution and quality assurance check.
-                    </p>
-                  </div>
+                    Create your first service
+                  </Link>
                 </div>
-
-                <div className="rounded-[12px] border border-[#E5E7EB] overflow-hidden group">
-                  <div className="h-44 bg-[#F3F4F6] relative overflow-hidden">
-                    <Image
-                      src="https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80"
-                      alt="Commercial project demonstration"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-grotesque font-bold text-[14px] text-[#222325]">
-                      Commercial Facility Service in Airport City
-                    </h3>
-                    <p className="text-[12px] text-[#62646A] mt-1">
-                      Multi-zone maintenance and technical certification handover.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Experience & Certifications */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-5">
-              <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                Qualifications & Experience
-              </h2>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-[8px] bg-[#F3F4F6] text-[#222325] flex items-center justify-center shrink-0">
-                    <Briefcase className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[14px] text-[#222325]">
-                      Lead {activeTrade.label} Technician • Accra Technical Services
-                    </h3>
-                    <p className="text-[12px] text-[#74767E]">2021 – Present • 3+ years</p>
-                    <p className="text-[13px] text-[#62646A] mt-1">
-                      Managed residential operations and client quality standards across Greater Accra.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-[8px] bg-[#F3F4F6] text-[#222325] flex items-center justify-center shrink-0">
-                    <Award className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[14px] text-[#222325]">
-                      Certified {activeTrade.label} Standards & Safety Certificate
-                    </h3>
-                    <p className="text-[12px] text-[#74767E]">National Vocational Training Institute (NVTI) • Verified</p>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between">
+                <h2 className="font-grotesque font-bold text-[18px] text-[#222325]">
+                  Qualifications & Experience
+                </h2>
+                <Link
+                  href="/provider/onboarding"
+                  className="text-[13px] font-semibold text-[#008744] hover:underline"
+                >
+                  Edit Qualifications
+                </Link>
               </div>
+
+              {profile?.workExperience && profile.workExperience.length > 0 ? (
+                <div className="space-y-4">
+                  {profile.workExperience.map((w, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-[8px] bg-[#F3F4F6] text-[#222325] flex items-center justify-center shrink-0">
+                        <Briefcase className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-[14px] text-[#222325]">
+                          {w.role} • {w.company}
+                        </h3>
+                        {w.startDate && (
+                          <p className="text-[12px] text-[#74767E]">{w.startDate}</p>
+                        )}
+                        {w.description && (
+                          <p className="text-[13px] text-[#62646A] mt-1">{w.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-[10px] bg-[#F9FAFB] border border-[#E5E7EB] text-[13px] text-[#74767E]">
+                  No work experience added yet. Click &quot;Edit Qualifications&quot; to add your professional history.
+                </div>
+              )}
+
+              {profile?.certifications && profile.certifications.length > 0 && (
+                <div className="space-y-3 pt-3 border-t border-[#F3F4F6]">
+                  {profile.certifications.map((c, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-[8px] bg-[#F3F4F6] text-[#222325] flex items-center justify-center shrink-0">
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-[14px] text-[#222325]">
+                          {c.title}
+                        </h3>
+                        <p className="text-[12px] text-[#74767E]">
+                          {c.issuingOrganization} {c.issueDate ? `• ${c.issueDate}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

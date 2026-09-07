@@ -6,9 +6,14 @@ import { Briefcase, ChevronDown } from "lucide-react";
 export interface ProfileStrengthCardProps {
   onAddPortfolio?: () => void;
   hasPortfolio?: boolean;
+  score?: number;
 }
 
-export function ProfileStrengthCard({ onAddPortfolio, hasPortfolio = false }: ProfileStrengthCardProps) {
+export function ProfileStrengthCard({
+  onAddPortfolio,
+  hasPortfolio = false,
+  score: externalScore,
+}: ProfileStrengthCardProps) {
   const [showAllItems, setShowAllItems] = React.useState(false);
 
   const checklistItems = [
@@ -26,7 +31,7 @@ export function ProfileStrengthCard({ onAddPortfolio, hasPortfolio = false }: Pr
     { title: "Set payout mobile money account", done: false },
   ];
 
-  const score = hasPortfolio ? 8 : 7;
+  const score = externalScore !== undefined ? externalScore : (hasPortfolio ? 8 : 7);
 
   return (
     <div className="w-full bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">

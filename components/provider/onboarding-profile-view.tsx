@@ -210,13 +210,21 @@ export function OnboardingProfileView() {
   const router = useRouter();
   const { user } = useUser();
 
-  // Initialize display name from user metadata or sensible default
-  const [displayName, setDisplayName] = React.useState("Clear");
-  const username =
-    user?.username || (user?.firstName ? user.firstName.toLowerCase() : "ksoul1");
+  // Photo upload state
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [photoUrl, setPhotoUrl] = React.useState<string>("");
+  const [photoAssetId, setPhotoAssetId] = React.useState<string>("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = React.useState<boolean>(false);
 
-  // Headline defaults to Plumbing (as depicted in user's state) or user profile
-  const [headline, setHeadline] = React.useState("Plumbing");
+  // Initialize display name from user or empty
+  const [displayName, setDisplayName] = React.useState<string>(() => {
+    return user?.fullName || user?.firstName || "";
+  });
+  const username =
+    user?.username || (user?.firstName ? user.firstName.toLowerCase() : "provider");
+
+  // Headline defaults to empty until selected by provider
+  const [headline, setHeadline] = React.useState<string>("");
   const [languages, setLanguages] = React.useState<string[]>([
     "English",
     "Twi",
@@ -225,21 +233,14 @@ export function OnboardingProfileView() {
 
   // Dynamic active trade config derived from headline
   const activeTrade = React.useMemo(
-    () => detectTradeConfig(headline),
+    () => detectTradeConfig(headline || "Home Repairs"),
     [headline]
   );
 
   // Skill experience levels mapped dynamically per active trade
   const [skillLevels, setSkillLevels] = React.useState<
     Record<string, string>
-  >(() => {
-    const initialConfig = detectTradeConfig("Plumbing");
-    const initialMap: Record<string, string> = {};
-    initialConfig.skills.forEach((s) => {
-      initialMap[s] = "Beginner";
-    });
-    return initialMap;
-  });
+  >({});
 
   // Optional lists
   const [workExperiences, setWorkExperiences] = React.useState<
@@ -258,43 +259,92 @@ export function OnboardingProfileView() {
 
   const [isSaving, setIsSaving] = React.useState(false);
 
-  // Sync user profile if loaded
+  // Fetch real profile from Sanity on mount
   React.useEffect(() => {
-    if (user?.unsafeMetadata) {
-      const meta = user.unsafeMetadata as {
-        customerName?: string;
-        providerProfile?: {
-          displayName?: string;
-          headline?: string;
-          languages?: string[];
-          skillLevels?: Record<string, string>;
-        };
-      };
-      if (meta.providerProfile?.displayName) {
-        setTimeout(() => setDisplayName(meta.providerProfile!.displayName!), 0);
-      } else if (meta.customerName) {
-        setTimeout(() => setDisplayName(meta.customerName!), 0);
-      } else if (user.fullName) {
-        setTimeout(() => setDisplayName(user.fullName!), 0);
-      } else if (user.firstName) {
-        setTimeout(() => setDisplayName(user.firstName!), 0);
-      }
-
-      if (meta.providerProfile?.headline) {
-        setTimeout(() => {
-          setHeadline(meta.providerProfile!.headline!);
-          const cfg = detectTradeConfig(meta.providerProfile!.headline!);
-          setSkillLevels((prev) => {
-            const next = { ...prev };
-            cfg.skills.forEach((s) => {
-              if (!next[s]) next[s] = "Beginner";
-            });
-            return next;
+    let isMounted = true;
+    fetch("/api/provider/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted || !data?.profile) return;
+        const p = data.profile;
+        if (p.displayName) setDisplayName(p.displayName);
+        if (p.headline) setHeadline(p.headline);
+        if (p.languages && p.languages.length > 0) setLanguages(p.languages);
+        if (p.photoUrl) setPhotoUrl(p.photoUrl);
+        if (p.expertise && Array.isArray(p.expertise)) {
+          const map: Record<string, string> = {};
+          p.expertise.forEach((s: string) => {
+            map[s] = "Expert";
           });
-        }, 0);
+          setSkillLevels(map);
+        }
+        if (Array.isArray(p.workExperience)) {
+          setWorkExperiences(
+            p.workExperience.map((w: { _key?: string; role?: string; company?: string; startDate?: string; description?: string }) => ({
+              id: w._key || String(Math.random()),
+              title: w.role || "",
+              company: w.company || "",
+              years: w.startDate || "",
+              description: w.description || "",
+            }))
+          );
+        }
+        if (Array.isArray(p.education)) {
+          setEducations(
+            p.education.map((e: { _key?: string; degreeOrCertificate?: string; institution?: string; year?: string }) => ({
+              id: e._key || String(Math.random()),
+              degree: e.degreeOrCertificate || "",
+              school: e.institution || "",
+              year: e.year || "",
+            }))
+          );
+        }
+        if (Array.isArray(p.certifications)) {
+          setCertifications(
+            p.certifications.map((c: { _key?: string; title?: string; issuingOrganization?: string; issueDate?: string }) => ({
+              id: c._key || String(Math.random()),
+              name: c.title || "",
+              issuer: c.issuingOrganization || "",
+              year: c.issueDate || "",
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn("Could not fetch Sanity profile:", err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload/image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.assetId) {
+        setPhotoAssetId(data.assetId);
+        setPhotoUrl(data.url);
+      } else {
+        alert(data.error || "Failed to upload image");
       }
+    } catch (err) {
+      console.error("Photo upload error:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploadingPhoto(false);
     }
-  }, [user]);
+  };
 
   const handleSaveBasicInfo = (data: {
     displayName: string;
@@ -319,8 +369,49 @@ export function OnboardingProfileView() {
   };
 
   const handleSaveAndContinue = async () => {
+    if (!displayName.trim()) {
+      alert("Please provide your Display Name.");
+      setIsEditBasicOpen(true);
+      return;
+    }
+    if (!headline.trim()) {
+      alert("Please select your primary trade service.");
+      setIsEditBasicOpen(true);
+      return;
+    }
+
     setIsSaving(true);
     try {
+      const profileData = {
+        displayName: displayName.trim(),
+        headline: headline.trim(),
+        primaryService: activeTrade.label,
+        tradeCategory: activeTrade.id,
+        languages,
+        location: locationName,
+        skillLevels,
+        workExperiences,
+        educations,
+        certifications,
+        photoAssetId: photoAssetId || undefined,
+      };
+
+      // 1. Sync directly to Sanity Studio via Server API Route
+      try {
+        const res = await fetch("/api/provider/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profileData),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Failed to sync provider profile to Sanity:", errText);
+        }
+      } catch (sanityErr) {
+        console.error("Error calling /api/provider/profile:", sanityErr);
+      }
+
+      // 2. Update Clerk unsafeMetadata for client session state
       if (user) {
         await user.update({
           unsafeMetadata: {
@@ -329,16 +420,8 @@ export function OnboardingProfileView() {
             onboardingStatus: "completed",
             primaryService: activeTrade.label,
             providerProfile: {
-              displayName,
-              headline,
-              primaryService: activeTrade.label,
-              tradeCategory: activeTrade.id,
-              languages,
-              location: locationName,
-              skillLevels,
-              workExperiences,
-              educations,
-              certifications,
+              ...profileData,
+              photoUrl: photoUrl || undefined,
             },
           },
         });
@@ -349,16 +432,8 @@ export function OnboardingProfileView() {
         localStorage.setItem(
           "fixit_provider_profile",
           JSON.stringify({
-            displayName,
-            headline,
-            primaryService: activeTrade.label,
-            tradeCategory: activeTrade.id,
-            languages,
-            location: locationName,
-            skillLevels,
-            workExperiences,
-            educations,
-            certifications,
+            ...profileData,
+            photoUrl: photoUrl || undefined,
           })
         );
       }
@@ -419,15 +494,36 @@ export function OnboardingProfileView() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-[#F3F4F6]">
             {/* Avatar with Camera Overlay */}
             <div className="relative shrink-0">
-              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-[#D4D4D8] text-[#52525B] flex items-center justify-center font-bold text-[28px]">
-                {displayName.charAt(0).toUpperCase()}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+              <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-[#D4D4D8] text-[#52525B] flex items-center justify-center font-bold text-[28px] overflow-hidden border-2 border-white shadow-xs">
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt={displayName || "Provider"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{displayName ? displayName.charAt(0).toUpperCase() : "P"}</span>
+                )}
               </div>
               <button
                 type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingPhoto}
                 aria-label="Upload photo"
                 className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-xs flex items-center justify-center text-[#404145] hover:bg-[#F3F4F6] cursor-pointer transition-colors"
               >
-                <Camera className="w-4 h-4" />
+                {isUploadingPhoto ? (
+                  <span className="w-3.5 h-3.5 border-2 border-[#008744] border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
               </button>
             </div>
 
@@ -439,7 +535,7 @@ export function OnboardingProfileView() {
                   onClick={() => setIsEditBasicOpen(true)}
                   className="font-grotesque font-bold text-[20px] sm:text-[22px] text-[#222325] hover:text-[#008744] flex items-center gap-2 cursor-pointer transition-colors text-left"
                 >
-                  <span>{displayName}</span>
+                  <span>{displayName || <span className="text-[#9CA3AF] italic">Enter your name</span>}</span>
                   <Edit2 className="w-4 h-4 text-[#74767E]" />
                 </button>
                 <span className="text-[14px] text-[#74767E]">
@@ -453,7 +549,7 @@ export function OnboardingProfileView() {
                 onClick={() => setIsEditBasicOpen(true)}
                 className="text-[14px] sm:text-[15px] text-[#404145] hover:text-[#008744] flex items-center gap-1.5 cursor-pointer text-left transition-colors font-medium"
               >
-                <span>{headline}</span>
+                <span>{headline || <span className="text-[#008744] font-semibold underline">+ Select your primary service & trade</span>}</span>
                 <Edit2 className="w-3.5 h-3.5 text-[#74767E]" />
               </button>
 

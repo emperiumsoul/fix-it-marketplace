@@ -27,111 +27,35 @@ export interface OrderItem {
   paymentStatus: "paid" | "pending" | "unpaid";
 }
 
-const INITIAL_ORDERS: OrderItem[] = [
-  {
-    id: "BK-98124",
-    customerName: "Abena Osei",
-    customerPhone: "+233 24 551 8920",
-    serviceTitle: "Residential House Cleaning",
-    packageName: "Single Session: 2-3 Bedroom House",
-    scope: "Routine scheduled maintenance cleaning of 2 bedrooms, 2 bathrooms, kitchen, and living room.",
-    price: 360,
-    scheduledTime: "2026-09-14T09:30:00Z",
-    address: "House 14, Jungle Avenue, East Legon, Accra",
-    status: "requested",
-    paymentStatus: "unpaid",
-  },
-  {
-    id: "BK-44821",
-    customerName: "Naa Ayeley",
-    customerPhone: "+233 20 882 1045",
-    serviceTitle: "Deep Home Cleaning & Degreasing",
-    packageName: "Standard Multi-Room Clean & Sanitize",
-    scope: "Deep scrubbing of kitchen surfaces, tile descaling in 2 washrooms, and vacuuming.",
-    price: 450,
-    scheduledTime: "2026-09-10T10:00:00Z",
-    address: "Apartment 4B, Ringway Estates, Osu, Accra",
-    status: "confirmed",
-    paymentStatus: "paid",
-  },
-  {
-    id: "BK-77192",
-    customerName: "Kwabena Owusu",
-    customerPhone: "+233 27 340 9912",
-    serviceTitle: "Move-Out Turnkey Sanitize",
-    packageName: "Turnkey Relocation Sanitization",
-    scope: "Complete empty apartment deep scrub, window wipe down, and cupboard disinfection before tenant handover.",
-    price: 680,
-    scheduledTime: "2026-09-06T08:30:00Z",
-    address: "Plot 12, Block C, Airport Residential, Accra",
-    status: "in_progress",
-    paymentStatus: "paid",
-  },
-  {
-    id: "BK-33910",
-    customerName: "Kofi Mensah",
-    customerPhone: "+233 55 120 4481",
-    serviceTitle: "Post-Event Cleaning Service",
-    packageName: "Commercial Compound Sweep & Waste Bagging",
-    scope: "Compound sweeping, sorting of plastic & paper waste, floor mop after 80-guest family party.",
-    price: 520,
-    scheduledTime: "2026-09-02T13:00:00Z",
-    address: "5th Circular Road, Cantonments, Accra",
-    status: "completed",
-    paymentStatus: "paid",
-  },
-  {
-    id: "BK-11029",
-    customerName: "Esi Badu",
-    customerPhone: "+233 24 990 3114",
-    serviceTitle: "Quick Routine Touch-Up",
-    packageName: "1 Bedroom Studio Refresh",
-    scope: "Dusting and quick mop of studio apartment.",
-    price: 180,
-    scheduledTime: "2026-08-28T14:00:00Z",
-    address: "Lakeside Estate, Ashaley Botwe, Accra",
-    status: "cancelled",
-    paymentStatus: "unpaid",
-  },
-];
-
 export interface OrdersListViewProps {
   initialStatusFilter?: string;
   onStatusChangeToast?: (msg: string) => void;
+  orders?: OrderItem[];
 }
 
 export function OrdersListView({
   initialStatusFilter = "all",
   onStatusChangeToast,
+  orders: externalOrders,
 }: OrdersListViewProps) {
-  const [orders, setOrders] = React.useState<OrderItem[]>(() => {
-    if (typeof window !== "undefined") {
-      const cached = localStorage.getItem("fixit_provider_orders");
-      if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch {
-          // fallback
-        }
+  const [statusOverrides, setStatusOverrides] = React.useState<Record<string, OrderItem["status"]>>({});
+
+  const orders = React.useMemo(() => {
+    const base = externalOrders ?? [];
+    return base.map((o) => {
+      if (statusOverrides[o.id]) {
+        return { ...o, status: statusOverrides[o.id] };
       }
-    }
-    return INITIAL_ORDERS;
-  });
+      return o;
+    });
+  }, [externalOrders, statusOverrides]);
 
   const [selectedFilter, setSelectedFilter] = React.useState<string | null>(null);
   const filter = selectedFilter ?? initialStatusFilter;
   const setFilter = (f: string) => setSelectedFilter(f);
 
-  const saveOrders = (updated: OrderItem[]) => {
-    setOrders(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("fixit_provider_orders", JSON.stringify(updated));
-    }
-  };
-
   const handleUpdateStatus = (id: string, newStatus: OrderItem["status"]) => {
-    const updated = orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o));
-    saveOrders(updated);
+    setStatusOverrides((prev) => ({ ...prev, [id]: newStatus }));
     const order = orders.find((o) => o.id === id);
     const statusLabels: Record<OrderItem["status"], string> = {
       requested: "Requested",
@@ -141,7 +65,7 @@ export function OrdersListView({
       cancelled: "Cancelled",
     };
     onStatusChangeToast?.(
-      `Order #${id} for ${order?.customerName || "customer"} updated to ${statusLabels[newStatus]}!`
+      `Order #${id} for ${order?.customerName || "customer"} updated to ${statusLabels[newStatus]}`
     );
   };
 

@@ -5,16 +5,24 @@ import Link from "next/link";
 import { Shield, Calendar, Info, ChevronRight, Check } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
-export function DashboardProfileBanner() {
+export interface DashboardProfileBannerProps {
+  profile?: {
+    displayName?: string;
+    photoUrl?: string;
+  } | null;
+}
+
+export function DashboardProfileBanner({ profile }: DashboardProfileBannerProps) {
   const { user } = useUser();
 
   const [availabilityStatus, setAvailabilityStatus] = React.useState<"Available" | "Busy" | "Away">("Available");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = React.useState(false);
 
-  // Read name & username from state / clerk
-  const displayName = user?.fullName || user?.firstName || "Kingsley";
-  const username = user?.username || (user?.firstName ? user.firstName.toLowerCase() : "ksoul1");
+  // Read name & username from profile / clerk
+  const displayName = profile?.displayName || user?.fullName || user?.firstName || "Provider";
+  const username = user?.username || (user?.firstName ? user.firstName.toLowerCase() : "provider");
   const initial = displayName.charAt(0).toUpperCase();
+  const photoUrl = profile?.photoUrl || user?.imageUrl || "";
 
   return (
     <div className="w-full bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">
@@ -22,8 +30,12 @@ export function DashboardProfileBanner() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {/* Avatar circle */}
-          <div className="w-13 h-13 rounded-full bg-[#52525B] text-white flex items-center justify-center font-bold text-[20px] shrink-0">
-            {initial}
+          <div className="w-13 h-13 rounded-full bg-[#52525B] text-white flex items-center justify-center font-bold text-[20px] shrink-0 overflow-hidden border border-[#E5E7EB]">
+            {photoUrl ? (
+              <img src={photoUrl} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <span>{initial}</span>
+            )}
           </div>
 
           {/* Info */}

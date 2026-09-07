@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { UserSync } from "@/components/auth/user-sync";
 import "./globals.css";
 
 const grotesque = Plus_Jakarta_Sans({
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="en" className={`${grotesque.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#404145]">
         <ClerkProvider>
+          <UserSync />
           {children}
         </ClerkProvider>
       </body>
