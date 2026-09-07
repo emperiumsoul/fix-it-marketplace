@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { auth } from '@clerk/nextjs/server'
 import { getServerClient } from '@/sanity/lib/server-client'
 
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
       displayName,
       headline,
       primaryService,
+      tradeCategory,
+      startingPrice = 150,
       languages = ['English', 'Twi'],
       location = 'Accra',
       skillLevels = {},
@@ -181,6 +184,113 @@ export async function POST(request: Request) {
         ...docData,
       })
       profileId = created._id
+    }
+
+    // Ensure initial published service exists for this provider in their category
+    const existingService = await client.fetch<{ _id: string } | null>(
+      `*[_type == "service" && (provider._ref == $profileId || provider->clerkUserId == $userId)][0]{ _id }`,
+      { profileId, userId }
+    )
+
+    if (!existingService) {
+      const tradeSlugMap: Record<string, string> = {
+        cleaning: 'house-cleaning',
+        'house-cleaning': 'house-cleaning',
+        plumbing: 'plumbing',
+        electrical: 'electrical-repairs',
+        'electrical-repairs': 'electrical-repairs',
+        painting: 'painting-decorating',
+        'painting-decorating': 'painting-decorating',
+        moving: 'moving-relocation',
+        'moving-relocation': 'moving-relocation',
+        gardening: 'gardening-landscaping',
+        'gardening-landscaping': 'gardening-landscaping',
+        furniture: 'furniture-assembly',
+        'furniture-assembly': 'furniture-assembly',
+        assembly: 'furniture-assembly',
+        repairs: 'appliance-home-repairs',
+        'home-repairs': 'appliance-home-repairs',
+        'appliance-home-repairs': 'appliance-home-repairs',
+      }
+
+      const tradeKey = (tradeCategory || primaryService || '').toString().toLowerCase().trim()
+      const targetSlug = tradeSlugMap[tradeKey] || tradeSlugMap[tradeKey.split(' ')[0]] || 'house-cleaning'
+
+      const category = await client.fetch<{ _id: string; title: string; slug: string; image?: unknown } | null>(
+        `*[_type == "category" && (
+          slug.current == $targetSlug ||
+          slug.current in [$targetSlug, "house-" + $targetSlug, $targetSlug + "-repairs", $targetSlug + "-landscaping", $targetSlug + "-decorating", $targetSlug + "-relocation"] ||
+          lower(title) match "*" + $tradeKey + "*"
+        )][0]{ _id, title, "slug": slug.current, image }`,
+        { targetSlug, tradeKey: tradeKey.slice(0, 10) }
+      )
+
+      const serviceTitle = headline
+        ? `${headline} by ${displayName}`
+        : `Professional ${primaryService || 'Home Services'} by ${displayName}`
+
+      const serviceBaseSlug = slugify(serviceTitle)
+      const serviceSlug = `${serviceBaseSlug}-${Date.now().toString(36)}`
+      const servicePrice = Number(startingPrice) || 150
+
+      const serviceDoc: Record<string, unknown> & { _type: 'service' } = {
+        _type: 'service',
+        title: serviceTitle,
+        slug: { _type: 'slug', current: serviceSlug },
+        summary: `${headline || primaryService || 'Professional service'} delivered across ${location} and surrounding areas in Ghana.`,
+        startingPrice: servicePrice,
+        currency: 'GHS',
+        status: 'published',
+        provider: {
+          _type: 'reference',
+          _ref: profileId,
+        },
+        serviceAreas: [location || 'Accra'],
+        description: bio,
+        includedTasks: expertiseList.length > 0
+          ? expertiseList
+          : ['Initial diagnosis and scope assessment', 'Standard equipment and safety checks', 'Service execution and cleanup'],
+        packages: [
+          {
+            _type: 'servicePackage',
+            _key: `pkg-${Date.now()}`,
+            name: 'Standard Package',
+            description: `Full standard appointment for ${primaryService || 'service'} in ${location}`,
+            price: servicePrice,
+            scope: 'Standard on-site service and routine labor',
+            duration: '1 - 2 hours',
+            includedTasks: expertiseList.slice(0, 3),
+            exclusions: ['Specialized parts not included', 'Extensive architectural modifications'],
+          },
+        ],
+      }
+
+      if (category) {
+        serviceDoc.category = {
+          _type: 'reference',
+          _ref: category._id,
+        }
+        if (category.image) {
+          serviceDoc.coverImage = category.image
+        }
+      }
+
+      await client.create(serviceDoc)
+
+      // Revalidate category and search pages so the new service is live immediately
+      try {
+        if (category?.slug) {
+          revalidatePath(`/categories/${category.slug}`)
+        }
+        if (targetSlug) {
+          revalidatePath(`/categories/${targetSlug}`)
+        }
+        revalidatePath('/categories/[slug]', 'page')
+        revalidatePath('/')
+        revalidatePath('/search')
+      } catch (revalErr) {
+        console.warn('[REVALIDATE_CATEGORY_SERVICES_WARN]', revalErr)
+      }
     }
 
     return NextResponse.json({ success: true, profileId })

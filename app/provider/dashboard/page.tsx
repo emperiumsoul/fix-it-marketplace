@@ -231,6 +231,19 @@ function DashboardInner() {
     paymentStatus: b.paymentStatus || "unpaid",
   }));
 
+  const detectedCategorySlug = React.useMemo(() => {
+    const text = `${data?.profile?.headline || ""} ${data?.profile?.expertise?.join(" ") || ""}`.toLowerCase();
+    if (text.includes("clean")) return "house-cleaning";
+    if (text.includes("plumb")) return "plumbing";
+    if (text.includes("electr")) return "electrical-repairs";
+    if (text.includes("paint")) return "painting-decorating";
+    if (text.includes("mov")) return "moving-relocation";
+    if (text.includes("assembl") || text.includes("furnitur")) return "furniture-assembly";
+    if (text.includes("garden") || text.includes("lawn")) return "gardening-landscaping";
+    if (text.includes("repair") || text.includes("appliance")) return "appliance-home-repairs";
+    return "house-cleaning";
+  }, [data?.profile?.headline, data?.profile?.expertise]);
+
   return (
     <div className="min-h-screen bg-[#F7F7F8] flex flex-col font-sans">
       {/* Top Navbar matching 7.png with tab control */}
@@ -424,6 +437,7 @@ function DashboardInner() {
 
       <CreateServiceModal
         isOpen={isCreateServiceModalOpen}
+        defaultCategorySlug={detectedCategorySlug}
         onClose={() => setIsCreateServiceModalOpen(false)}
         onSave={handleSaveService}
       />

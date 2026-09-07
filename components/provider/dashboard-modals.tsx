@@ -274,6 +274,7 @@ export const GHANA_SERVICE_CATEGORIES = [
 
 export interface CreateServiceModalProps {
   isOpen: boolean;
+  defaultCategorySlug?: string;
   onClose: () => void;
   onSave: (service: {
     title: string;
@@ -285,12 +286,19 @@ export interface CreateServiceModalProps {
   }) => void;
 }
 
-export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceModalProps) {
+export function CreateServiceModal({
+  isOpen,
+  defaultCategorySlug = "house-cleaning",
+  onClose,
+  onSave,
+}: CreateServiceModalProps) {
   const [title, setTitle] = React.useState("");
-  const [categorySlug, setCategorySlug] = React.useState("house-cleaning");
+  const [selectedCategorySlug, setSelectedCategorySlug] = React.useState<string | null>(null);
   const [price, setPrice] = React.useState("150");
   const [area, setArea] = React.useState("Accra & Greater Accra");
   const [description, setDescription] = React.useState("");
+
+  const activeCategorySlug = selectedCategorySlug ?? defaultCategorySlug;
 
   if (!isOpen) return null;
 
@@ -298,7 +306,7 @@ export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceMod
     e.preventDefault();
     if (!title.trim()) return;
     const selectedCat =
-      GHANA_SERVICE_CATEGORIES.find((c) => c.slug === categorySlug) ||
+      GHANA_SERVICE_CATEGORIES.find((c) => c.slug === activeCategorySlug) ||
       GHANA_SERVICE_CATEGORIES[0];
     onSave({
       title,
@@ -310,6 +318,7 @@ export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceMod
     });
     setTitle("");
     setDescription("");
+    setSelectedCategorySlug(null);
     onClose();
   };
 
@@ -357,8 +366,8 @@ export function CreateServiceModal({ isOpen, onClose, onSave }: CreateServiceMod
                 Category
               </label>
               <select
-                value={categorySlug}
-                onChange={(e) => setCategorySlug(e.target.value)}
+                value={activeCategorySlug}
+                onChange={(e) => setSelectedCategorySlug(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#DADBDD] text-[14px] text-[#222325] focus:outline-hidden focus:border-[#222325] bg-white cursor-pointer"
               >
                 {GHANA_SERVICE_CATEGORIES.map((cat) => (
