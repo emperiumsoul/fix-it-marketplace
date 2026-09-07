@@ -170,11 +170,19 @@ export function VisibilityStepsCard({
               </div>
             </div>
 
-            <div className="self-start sm:self-center shrink-0">
               {serviceCompleted ? (
-                <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#008744] bg-[#E8F8F0] px-3 py-1.5 rounded-[8px]">
-                  <CheckCircle2 className="w-4 h-4" /> Created
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#008744] bg-[#E8F8F0] px-3 py-1.5 rounded-[8px]">
+                    <CheckCircle2 className="w-4 h-4" /> Created
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onCreateService}
+                    className="px-3.5 py-1.5 rounded-[8px] bg-white border border-[#DADBDD] hover:bg-[#F9FAFB] text-[#222325] text-[13px] font-semibold transition-colors cursor-pointer shadow-2xs"
+                  >
+                    + Add Another Service
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
@@ -184,7 +192,6 @@ export function VisibilityStepsCard({
                   Create a service
                 </button>
               )}
-            </div>
           </div>
         </div>
 

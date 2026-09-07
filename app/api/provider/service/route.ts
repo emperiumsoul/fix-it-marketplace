@@ -41,9 +41,9 @@ export async function POST(request: Request) {
 
     const client = getServerClient({ useWriteToken: true })
 
-    // 1. Find provider profile ID
-    const provider = await client.fetch<{ _id: string } | null>(
-      `*[_type == "providerProfile" && clerkUserId == $userId][0]{ _id }`,
+    // 1. Find provider profile ID and photo asset
+    const provider = await client.fetch<{ _id: string; photoAsset?: string } | null>(
+      `*[_type == "providerProfile" && clerkUserId == $userId][0]{ _id, "photoAsset": photo.asset._ref }`,
       { userId }
     )
 
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     const baseSlug = slugify(title)
     const slug = `${baseSlug}-${Date.now().toString(36)}`
 
-    const serviceDoc = {
+    const serviceDoc: Record<string, unknown> & { _type: 'service' } = {
       _type: 'service',
       title,
       slug: { _type: 'slug', current: slug },
@@ -114,6 +114,17 @@ export async function POST(request: Request) {
       },
       ...(category ? { category: { _type: 'reference', _ref: category._id } } : {}),
       serviceAreas: [serviceArea],
+      ...(provider?.photoAsset
+        ? {
+            coverImage: {
+              _type: 'image',
+              asset: {
+                _type: 'reference',
+                _ref: provider.photoAsset,
+              },
+            },
+          }
+        : {}),
       description: [
         {
           _type: 'block',
@@ -150,7 +161,7 @@ export async function POST(request: Request) {
 
     const created = await client.create(serviceDoc)
 
-    // Revalidate paths so the service immediately appears in category listings
+    // Revalidate paths so the service immediately appears across the application
     try {
       if (category?.slug) {
         revalidatePath(`/categories/${category.slug}`)
@@ -159,6 +170,8 @@ export async function POST(request: Request) {
         revalidatePath(`/categories/${targetSlug}`)
       }
       revalidatePath('/categories/[slug]', 'page')
+      revalidatePath('/provider/dashboard')
+      revalidatePath('/provider/profile')
       revalidatePath('/')
       revalidatePath('/search')
     } catch (revalErr) {

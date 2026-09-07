@@ -283,7 +283,7 @@ export interface CreateServiceModalProps {
     price: number;
     description: string;
     area: string;
-  }) => void;
+  }) => Promise<boolean | void> | void;
 }
 
 export function CreateServiceModal({
@@ -297,29 +297,47 @@ export function CreateServiceModal({
   const [price, setPrice] = React.useState("150");
   const [area, setArea] = React.useState("Accra & Greater Accra");
   const [description, setDescription] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const activeCategorySlug = selectedCategorySlug ?? defaultCategorySlug;
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
-    const selectedCat =
-      GHANA_SERVICE_CATEGORIES.find((c) => c.slug === activeCategorySlug) ||
-      GHANA_SERVICE_CATEGORIES[0];
-    onSave({
-      title,
-      category: selectedCat.title,
-      categorySlug: selectedCat.slug,
-      price: Number(price) || 150,
-      description,
-      area,
-    });
-    setTitle("");
-    setDescription("");
-    setSelectedCategorySlug(null);
-    onClose();
+    if (!title.trim()) {
+      setError("Please enter a service title.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const selectedCat =
+        GHANA_SERVICE_CATEGORIES.find((c) => c.slug === activeCategorySlug) ||
+        GHANA_SERVICE_CATEGORIES[0];
+
+      await onSave({
+        title: title.trim(),
+        category: selectedCat.title,
+        categorySlug: selectedCat.slug,
+        price: Number(price) || 150,
+        description: description.trim(),
+        area: area.trim(),
+      });
+
+      setTitle("");
+      setDescription("");
+      setSelectedCategorySlug(null);
+      onClose();
+    } catch (err: unknown) {
+      console.error("Failed to create service:", err);
+      setError(err instanceof Error ? err.message : "Failed to publish service. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -346,6 +364,13 @@ export function CreateServiceModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 rounded-[10px] bg-[#FEE2E2] border border-[#FCA5A5] text-[#991B1B] text-[13px] flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div>
             <label className="block text-[13px] font-semibold text-[#222325] mb-1.5">
               Service Title *
@@ -429,15 +454,24 @@ export function CreateServiceModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="px-4 py-2 text-[14px] font-medium text-[#74767E] hover:text-[#222325] cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] disabled:opacity-50 text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-2"
             >
-              Create Service
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating Service...
+                </>
+              ) : (
+                'Create Service'
+              )}
             </button>
           </div>
         </form>

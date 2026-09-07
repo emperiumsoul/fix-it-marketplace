@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import {
   Package,
   Wallet,
@@ -10,6 +11,11 @@ import {
   ArrowRight,
   TrendingUp,
   Clock,
+  Plus,
+  ExternalLink,
+  Sparkles,
+  MapPin,
+  CheckCircle2,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/provider/dashboard-header";
 import { DashboardProfileBanner } from "@/components/provider/dashboard-profile-banner";
@@ -82,10 +88,10 @@ function DashboardInner() {
   const searchParams = useSearchParams();
   const { user } = useUser();
 
-  const activeTab = (searchParams?.get("tab") as "overview" | "orders" | "earnings") || "overview";
+  const activeTab = (searchParams?.get("tab") as "overview" | "services" | "orders" | "earnings") || "overview";
   const statusParam = searchParams?.get("status") || "all";
 
-  const handleTabChange = (tab: "overview" | "orders" | "earnings") => {
+  const handleTabChange = (tab: "overview" | "services" | "orders" | "earnings") => {
     router.push(`/provider/dashboard?tab=${tab}`);
   };
 
@@ -135,6 +141,15 @@ function DashboardInner() {
       setTimeout(() => setGuideCompleted(true), 0);
     }
   }, [user?.unsafeMetadata?.safetyGuideCompleted, guideCompleted]);
+
+  // Auto-open create service modal if query param triggers it
+  React.useEffect(() => {
+    const action = searchParams?.get("action");
+    const addParam = searchParams?.get("addService") || searchParams?.get("createService");
+    if (action === "new-service" || action === "create-service" || addParam === "true") {
+      setTimeout(() => setIsCreateServiceModalOpen(true), 0);
+    }
+  }, [searchParams]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -195,16 +210,21 @@ function DashboardInner() {
 
       const resJson = await res.json();
       if (!res.ok) {
-        showToast(resJson.error || "Failed to publish service");
-        return;
+        const errMsg = resJson.error || "Failed to publish service";
+        showToast(errMsg);
+        throw new Error(errMsg);
       }
 
       setServiceCompleted(true);
       fetchDashboardData();
       showToast(`Service "${service.title}" published successfully!`);
+      handleTabChange("services");
     } catch (e) {
       console.error("Failed to publish service", e);
-      showToast("Error creating service");
+      if (!(e instanceof Error)) {
+        showToast("Error creating service");
+      }
+      throw e;
     }
   };
 
@@ -275,6 +295,28 @@ function DashboardInner() {
           >
             <LayoutDashboard className="w-4 h-4" />
             <span>Overview</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTabChange("services")}
+            className={`px-4 py-2 rounded-[8px] text-[14px] font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === "services"
+                ? "bg-[#18181B] text-white shadow-xs"
+                : "text-[#62646A] hover:text-[#222325] hover:bg-[#E5E7EB]/50"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>My Services</span>
+            <span
+              className={`text-[11px] px-1.5 py-0.2 rounded-full ${
+                activeTab === "services"
+                  ? "bg-white text-[#18181B] font-bold"
+                  : "bg-[#E5E7EB] text-[#404145]"
+              }`}
+            >
+              {data?.services?.length || 0}
+            </span>
           </button>
 
           <button
@@ -399,10 +441,170 @@ function DashboardInner() {
               areasHoursCompleted={Boolean(data?.metrics?.isAreasHoursSet)}
               isPublished={Boolean(data?.metrics?.isPublished)}
             />
+
+            {/* My Services Summary Card */}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-grotesque font-bold text-[18px] text-[#222325]">
+                      My Services ({data?.services?.length || 0})
+                    </h3>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#E8F8F0] text-[#008744]">
+                      Active Listings
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-[#74767E] mt-0.5">
+                    Services and trades published to your public profile and customer search.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateServiceModalOpen(true)}
+                  className="px-3.5 py-2 rounded-[8px] bg-[#008744] hover:bg-[#007038] text-white text-[13px] font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Service</span>
+                </button>
+              </div>
+
+              {data?.services && data.services.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  {data.services.map((srv) => (
+                    <div
+                      key={srv._id}
+                      className="p-4 rounded-[12px] border border-[#E5E7EB] bg-[#FAFAFA] hover:border-[#18181B] transition-all flex flex-col justify-between gap-3"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#008744] bg-[#E8F8F0] px-2 py-0.5 rounded-full">
+                            {srv.categoryTitle || "Service"}
+                          </span>
+                          <span className="text-[13px] font-bold text-[#222325]">
+                            GHS {srv.startingPrice}
+                          </span>
+                        </div>
+                        <h4 className="font-grotesque font-bold text-[15px] text-[#222325] line-clamp-1">
+                          {srv.title}
+                        </h4>
+                        <p className="text-[12px] text-[#74767E] mt-0.5">
+                          {srv.serviceAreas?.[0] || "Accra & Greater Accra"}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB]/80 text-[12px]">
+                        <span className="text-[#008744] font-medium flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Published
+                        </span>
+                        <Link
+                          href={`/services/${srv.slug || srv._id}`}
+                          target="_blank"
+                          className="font-semibold text-[#222325] hover:text-[#008744] flex items-center gap-1 transition-colors"
+                        >
+                          View Listing <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 text-center rounded-[12px] bg-[#FAFAFA] border border-dashed border-[#DADBDD]">
+                  <p className="text-[13px] text-[#74767E]">
+                    You haven&apos;t created any services yet. Click &quot;Add Service&quot; to publish your trade.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Tab 2: Orders Received */}
+        {/* Tab 2: My Services */}
+        {activeTab === "services" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-[16px] border border-[#E5E7EB] shadow-xs">
+              <div>
+                <h2 className="font-grotesque font-bold text-[22px] text-[#222325]">
+                  My Services & Packages
+                </h2>
+                <p className="text-[14px] text-[#62646A] mt-1">
+                  Manage the services, pricing, and scopes of work you offer across Ghana.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateServiceModalOpen(true)}
+                className="px-5 py-2.5 rounded-[10px] bg-[#008744] hover:bg-[#007038] text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-2 self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New Service</span>
+              </button>
+            </div>
+
+            {data?.services && data.services.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {data.services.map((srv) => (
+                  <div
+                    key={srv._id}
+                    className="p-5 bg-white rounded-[14px] border border-[#E5E7EB] hover:shadow-md transition-all flex flex-col justify-between gap-4"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#008744] bg-[#E8F8F0] px-2.5 py-1 rounded-full">
+                          {srv.categoryTitle || "Service"}
+                        </span>
+                        <span className="font-grotesque font-bold text-[18px] text-[#222325]">
+                          GHS {srv.startingPrice}
+                        </span>
+                      </div>
+                      <h3 className="font-grotesque font-bold text-[17px] text-[#222325]">
+                        {srv.title}
+                      </h3>
+                      <p className="text-[13px] text-[#74767E] mt-1 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#74767E]" />
+                        {srv.serviceAreas?.[0] || "Accra & Greater Accra"}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#008744]">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Published
+                      </span>
+                      <Link
+                        href={`/services/${srv.slug || srv._id}`}
+                        target="_blank"
+                        className="px-3 py-1.5 rounded-[8px] bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#222325] text-[12px] font-semibold transition-colors flex items-center gap-1"
+                      >
+                        View Live <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white p-12 text-center rounded-[16px] border border-[#E5E7EB] shadow-xs flex flex-col items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-[#E8F8F0] text-[#008744] flex items-center justify-center mb-3">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="font-grotesque font-bold text-[18px] text-[#222325] mb-1">
+                  No services published yet
+                </h3>
+                <p className="text-[14px] text-[#62646A] max-w-md mb-6">
+                  Add your trades, specialties, and package pricing to start appearing in marketplace search results across Ghana.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateServiceModalOpen(true)}
+                  className="px-5 py-2.5 rounded-[10px] bg-[#008744] hover:bg-[#007038] text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Your First Service</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: Orders Received */}
         {activeTab === "orders" && (
           <OrdersListView
             orders={formattedOrders}

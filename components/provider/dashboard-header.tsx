@@ -6,8 +6,8 @@ import { ChevronDown, Bell, Mail, HelpCircle, Shield } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
 export interface DashboardHeaderProps {
-  activeTab?: "overview" | "orders" | "earnings";
-  onSelectTab?: (tab: "overview" | "orders" | "earnings") => void;
+  activeTab?: "overview" | "services" | "orders" | "earnings";
+  onSelectTab?: (tab: "overview" | "services" | "orders" | "earnings") => void;
 }
 
 export function DashboardHeader({ activeTab = "overview", onSelectTab }: DashboardHeaderProps) {
@@ -45,7 +45,7 @@ export function DashboardHeader({ activeTab = "overview", onSelectTab }: Dashboa
 
   const [activeMenu, setActiveMenu] = React.useState<string | null>(null);
 
-  const handleTabClick = (tab: "overview" | "orders" | "earnings") => {
+  const handleTabClick = (tab: "overview" | "services" | "orders" | "earnings") => {
     setActiveMenu(null);
     onSelectTab?.(tab);
   };
@@ -105,11 +105,18 @@ export function DashboardHeader({ activeTab = "overview", onSelectTab }: Dashboa
                     Edit Profile Details
                   </Link>
                   <Link
-                    href="/provider/dashboard?tab=overview"
-                    onClick={() => handleTabClick("overview")}
+                    href="/provider/dashboard?tab=services"
+                    onClick={() => handleTabClick("services")}
                     className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#222325]"
                   >
                     Services & Packages
+                  </Link>
+                  <Link
+                    href="/provider/dashboard?tab=services&action=new-service"
+                    onClick={() => setActiveMenu(null)}
+                    className="block px-4 py-2 hover:bg-[#F9FAFB] text-[#008744] font-medium"
+                  >
+                    + Add New Service
                   </Link>
                 </div>
               )}

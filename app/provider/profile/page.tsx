@@ -292,8 +292,8 @@ export default function ProviderProfilePage() {
                   Services & Packages Offered
                 </h2>
                 <Link
-                  href="/provider/dashboard?tab=overview"
-                  className="text-[13px] font-semibold text-[#008744] hover:underline"
+                  href="/provider/dashboard?tab=services&action=new-service"
+                  className="text-[13px] font-semibold text-[#008744] hover:underline flex items-center gap-1"
                 >
                   + Add Service
                 </Link>
