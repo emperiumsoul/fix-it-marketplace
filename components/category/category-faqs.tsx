@@ -8,51 +8,28 @@ export interface FAQItem {
   answer: string;
 }
 
+import { getCategoryPreset } from "./category-data-presets";
+
 export interface CategoryFAQsProps {
   categoryTitle?: string;
+  categorySlug?: string;
   faqs?: FAQItem[];
 }
 
-const DEFAULT_CLEANING_FAQS: FAQItem[] = [
-  {
-    question: "What does a standard cleaning include?",
-    answer:
-      "A standard cleaning includes sweeping, vacuuming, and mopping all floors, wiping down surfaces, dusting furniture, cleaning mirrors, emptying waste bins, sanitizing toilets and sinks, and washing kitchen countertops.",
-  },
-  {
-    question: "How do I choose a cleaning professional?",
-    answer:
-      "Browse verified provider profiles on Fix it. Check their client feedback, confirmed booking history, verified Ghanaian trade badges, and service areas to find the best match for your neighbourhood.",
-  },
-  {
-    question: "How much does home cleaning cost?",
-    answer:
-      "Routine apartment maintenance cleaning typically starts around GHS 180 to GHS 350. Full residential deep cleaning ranges from GHS 450 to GHS 1,200 depending on home size, number of bathrooms, and specialized requests.",
-  },
-  {
-    question: "Do I need to provide cleaning supplies?",
-    answer:
-      "Most Fix it cleaning professionals bring their own commercial HEPA vacuums, microfiber mops, scrubbing brushes, and eco-friendly detergents. You only need to ensure water and electrical supply access.",
-  },
-  {
-    question: "Can I book a regular cleaning service?",
-    answer:
-      "Yes! Providers offer weekly, bi-weekly, or monthly recurring schedules. You can coordinate your preferred days and even request the same assigned cleaner for ongoing continuity.",
-  },
-  {
-    question: "How do I prepare for my cleaning appointment?",
-    answer:
-      "We recommend putting away sensitive personal documents and valuables, securing household pets, and tidying loose clutter from the floors so the cleaners can focus on deep scrubbing and sanitization.",
-  },
-];
+
 
 export function CategoryFAQs({
   categoryTitle = "Cleaning",
+  categorySlug = "cleaning",
   faqs,
 }: CategoryFAQsProps) {
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
 
-  const displayFaqs = faqs && faqs.length > 0 ? faqs : DEFAULT_CLEANING_FAQS;
+  const preset = React.useMemo(
+    () => getCategoryPreset(categorySlug || categoryTitle),
+    [categorySlug, categoryTitle]
+  );
+  const displayFaqs = faqs && faqs.length > 0 ? faqs : preset.faqs;
 
   const toggleItem = (idx: number) => {
     setOpenIndex(openIndex === idx ? null : idx);

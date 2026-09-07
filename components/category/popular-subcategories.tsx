@@ -5,13 +5,10 @@ import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
-  Home,
   Sparkles,
-  Building2,
-  Truck,
-  Armchair,
   type LucideIcon,
 } from "lucide-react";
+import { getCategoryPreset } from "./category-data-presets";
 
 export interface PopularSubcategoryItem {
   name: string;
@@ -25,14 +22,6 @@ export interface PopularSubcategoriesProps {
   items?: PopularSubcategoryItem[];
 }
 
-const DEFAULT_CLEANING_ITEMS: PopularSubcategoryItem[] = [
-  { name: "House Cleaning", query: "House Cleaning", icon: Home },
-  { name: "Deep Cleaning", query: "Deep Cleaning", icon: Sparkles },
-  { name: "Office Cleaning", query: "Office Cleaning", icon: Building2 },
-  { name: "Move-out Cleaning", query: "Move-out Cleaning", icon: Truck },
-  { name: "Sofa Cleaning", query: "Sofa Cleaning", icon: Armchair },
-];
-
 export function PopularSubcategories({
   categoryTitle = "Cleaning",
   categorySlug = "cleaning",
@@ -40,7 +29,8 @@ export function PopularSubcategories({
 }: PopularSubcategoriesProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  const displayItems = items && items.length > 0 ? items : DEFAULT_CLEANING_ITEMS;
+  const preset = React.useMemo(() => getCategoryPreset(categorySlug), [categorySlug]);
+  const displayItems = items && items.length > 0 ? items : preset.popularSubcategories;
 
   const handleScroll = (direction: "left" | "right") => {
     if (scrollRef.current) {

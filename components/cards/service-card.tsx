@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MapPin, Star } from "lucide-react";
+import { Heart, MapPin, Star, ShieldCheck } from "lucide-react";
 import { useUser, useClerk } from "@clerk/nextjs";
 
 export interface ServiceCardProps {
@@ -12,6 +12,7 @@ export interface ServiceCardProps {
   title: string;
   category?: string;
   providerName?: string;
+  isVerified?: boolean;
   price: number;
   currency?: string;
   rating?: number;
@@ -28,6 +29,7 @@ export function ServiceCard({
   title = "Home cleaning",
   category,
   providerName,
+  isVerified = false,
   price = 150,
   currency = "GH₵",
   rating = 4.8,
@@ -186,8 +188,13 @@ export function ServiceCard({
         </h3>
 
         {providerName && (
-          <div className="text-[13px] text-[#62646A] -mt-1">
-            By <span className="font-medium text-[#222325]">{providerName}</span>
+          <div className="text-[13px] text-[#62646A] -mt-1 flex items-center flex-wrap gap-1.5">
+            <span>By <span className="font-medium text-[#222325]">{providerName}</span></span>
+            {isVerified && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#008744] bg-[#E8F8F0] px-1.5 py-0.5 rounded-[4px]">
+                <ShieldCheck className="w-3 h-3 stroke-[2.5]" /> Verified
+              </span>
+            )}
           </div>
         )}
 

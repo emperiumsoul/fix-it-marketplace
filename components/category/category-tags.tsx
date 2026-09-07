@@ -9,39 +9,15 @@ export interface CategoryTagsProps {
   tags?: string[];
 }
 
-const DEFAULT_CLEANING_TAGS: string[] = [
-  "House Cleaning",
-  "Deep Cleaning",
-  "Sofa Cleaning",
-  "Carpet Cleaning",
-  "Window Cleaning",
-  "Office Cleaning",
-  "Move-out Cleaning",
-  "Post-construction",
-  "Laundry & Ironing",
-  "Kitchen Cleaning",
-  "Bathroom Cleaning",
-  "Disinfection",
-  "Mould Removal",
-  "Driveway Cleaning",
-  "Water Tank Cleaning",
-  "Gutter Cleaning",
-  "Regular Cleaning",
-  "One-off Cleaning",
-  "End-of-Tenancy",
-  "After-event Cleaning",
-  "Sanitisation",
-  "Rug Cleaning",
-  "Mattress Cleaning",
-  "Bin Cleaning",
-];
+import { getCategoryPreset } from "./category-data-presets";
 
 export function CategoryTags({
   categoryTitle = "Cleaning",
   categorySlug = "cleaning",
   tags,
 }: CategoryTagsProps) {
-  const displayTags = tags && tags.length > 0 ? tags : DEFAULT_CLEANING_TAGS;
+  const preset = React.useMemo(() => getCategoryPreset(categorySlug), [categorySlug]);
+  const displayTags = tags && tags.length > 0 ? tags : preset.tags;
 
   return (
     <section className="w-full max-w-[1100px] mx-auto px-4 sm:px-6 my-16 text-center">

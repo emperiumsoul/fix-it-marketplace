@@ -195,6 +195,13 @@ export function PublicHeader({
               >
                 Bookings
               </Link>
+
+              <Link
+                href="/admin"
+                className="hover:text-[#222325] text-[12px] font-semibold px-2.5 py-1 rounded-[6px] bg-[#F3F4F6] text-[#4B5563] hover:bg-[#E5E7EB] transition-colors ml-1"
+              >
+                Admin
+              </Link>
             </div>
           </Show>
 
@@ -291,6 +298,13 @@ export function PublicHeader({
               className="py-1.5 hover:text-[#008744]"
             >
               Saved Services
+            </Link>
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-1.5 hover:text-[#222325]"
+            >
+              Admin Operations
             </Link>
           </Show>
           <Link

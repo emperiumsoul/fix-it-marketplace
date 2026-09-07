@@ -16,144 +16,15 @@ export interface ExploreGridProps {
   cards?: ExploreCardItem[];
 }
 
-const DEFAULT_CLEANING_EXPLORE_CARDS: ExploreCardItem[] = [
-  {
-    title: "Home Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Regular Cleaning",
-      "Deep Cleaning",
-      "Kitchen Cleaning",
-      "Bathroom Cleaning",
-      "Bedroom Cleaning",
-    ],
-  },
-  {
-    title: "Office & Commercial Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Office Cleaning",
-      "Shop Cleaning",
-      "Shared Spaces",
-      "Commercial Kitchens",
-    ],
-  },
-  {
-    title: "Move-in & Move-out Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Move-in Cleaning",
-      "Move-out Cleaning",
-      "End-of-Tenancy Cleaning",
-      "Empty Property Cleaning",
-    ],
-  },
-  {
-    title: "Post-construction Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Renovation Cleanup",
-      "Dust Removal",
-      "Floor Cleaning",
-      "Window Cleanup",
-    ],
-  },
-  {
-    title: "Sofa & Upholstery Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Sofa Cleaning",
-      "Upholstery Cleaning",
-      "Stain Removal",
-      "Fabric Protection",
-      "Mattress Cleaning",
-    ],
-  },
-  {
-    title: "Carpet & Rug Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Carpet Cleaning",
-      "Rug Cleaning",
-      "Stain Treatment",
-      "Odour Removal",
-      "Office Carpets",
-    ],
-  },
-  {
-    title: "Window & Glass Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Window Cleaning",
-      "Glass Cleaning",
-      "High-rise Cleaning",
-      "Frame Cleaning",
-      "Skylight Cleaning",
-    ],
-  },
-  {
-    title: "Laundry & Ironing",
-    imageUrl: "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Laundry Service",
-      "Ironing Service",
-      "Wash & Fold",
-      "Curtain Cleaning",
-      "Bedding & Linens",
-    ],
-  },
-  {
-    title: "Outdoor Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1584467735815-f778f274e296?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Driveway Cleaning",
-      "Patio & Deck Cleaning",
-      "Compound Cleaning",
-      "Fence Cleaning",
-      "Outdoor Furniture Cleaning",
-    ],
-  },
-  {
-    title: "Specialist Cleaning",
-    imageUrl: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Steam Cleaning",
-      "Sanitisation Service",
-      "Mould Removal",
-      "Disinfection Cleaning",
-      "After-event Cleaning",
-    ],
-  },
-  {
-    title: "Cleaning Packages",
-    imageUrl: "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Regular Cleaning Plans",
-      "Deep Cleaning Packages",
-      "Move-in Packages",
-      "Office Cleaning Plans",
-      "Custom Cleaning Plans",
-    ],
-  },
-  {
-    title: "Other Cleaning Services",
-    imageUrl: "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=500&q=80",
-    subItems: [
-      "Bin Cleaning",
-      "Water Tank Cleaning",
-      "Gutter Cleaning",
-      "Drain Cleaning",
-      "Pest Control (Cleaning)",
-    ],
-  },
-];
+import { getCategoryPreset } from "./category-data-presets";
 
 export function ExploreGrid({
   categoryTitle = "Cleaning",
   categorySlug = "cleaning",
   cards,
 }: ExploreGridProps) {
-  const displayCards = cards && cards.length > 0 ? cards : DEFAULT_CLEANING_EXPLORE_CARDS;
+  const preset = React.useMemo(() => getCategoryPreset(categorySlug), [categorySlug]);
+  const displayCards = cards && cards.length > 0 ? cards : preset.exploreCards;
 
   return (
     <section className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 my-10">
