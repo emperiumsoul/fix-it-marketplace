@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
 import { getServerClient } from '@/sanity/lib/server-client'
+import { getAuthenticatedUserId, getAuthenticatedUser } from '@/lib/auth/get-user'
 
-export async function POST() {
+export const dynamic = 'force-dynamic'
+
+export async function POST(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await currentUser()
+    const user = await getAuthenticatedUser(request)
     const client = getServerClient({ useWriteToken: true })
 
     // Check if customer profile already exists for this Clerk user ID

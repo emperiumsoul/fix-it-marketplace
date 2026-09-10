@@ -23,13 +23,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${grotesque.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#404145]">
-        <ClerkProvider>
+    <ClerkProvider>
+      <html lang="en" className={`${grotesque.variable} h-full antialiased`}>
+        <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#404145]">
           <UserSync />
           {children}
-        </ClerkProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

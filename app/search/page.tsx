@@ -106,8 +106,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   // 2. Construct GROQ Query for services
-  const queryParams: Record<string, string | number> = {};
-  const filterConditions: string[] = ['_type == "service"', "defined(slug.current)"];
+  const queryParams: Record<string, unknown> = {};
+  const filterConditions: string[] = [
+    '_type == "service"',
+    "defined(slug.current)",
+    'status == "published"',
+    '(provider->verificationStatus == "verified" || provider->verified == true)',
+  ];
 
   // Category filter
   if (category) {

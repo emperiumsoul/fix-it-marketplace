@@ -165,7 +165,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         lower(title) match $tradeKeyword ||
         lower(summary) match $tradeKeyword
       ))
-    ) && status == "published"] | order(_createdAt desc){
+    ) && status == "published" && (provider->verificationStatus == "verified" || provider->verified == true)] | order(_createdAt desc){
       _id,
       title,
       "slug": slug.current,

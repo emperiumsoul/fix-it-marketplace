@@ -15,9 +15,21 @@ export interface AdminCheckResult {
  *
  * NOTE: Never automatically overwrites or writes to Clerk metadata behind the user's back.
  */
-export async function checkAdminAccess(): Promise<AdminCheckResult> {
+import { getAuthenticatedUser } from './get-user'
+
+export async function checkAdminAccess(request?: Request): Promise<AdminCheckResult> {
   try {
-    const user = await currentUser()
+    let user = null
+    try {
+      user = await currentUser()
+    } catch {
+      // Clock skew or token validation failure
+    }
+
+    if (!user && request) {
+      user = await getAuthenticatedUser(request)
+    }
+
     if (!user) {
       return { isAdmin: false, userId: null }
     }

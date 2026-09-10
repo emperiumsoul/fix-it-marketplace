@@ -3,9 +3,9 @@ import { checkAdminAccess } from '@/lib/auth/admin'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { isAdmin, userId, email } = await checkAdminAccess()
+    const { isAdmin, userId, email } = await checkAdminAccess(request)
     return NextResponse.json({
       isAdmin,
       userId,

@@ -217,7 +217,7 @@ function DashboardInner() {
 
       setServiceCompleted(true);
       fetchDashboardData();
-      showToast(`Service "${service.title}" published successfully!`);
+      showToast(resJson?.message || `Service "${service.title}" created successfully!`);
       handleTabChange("services");
     } catch (e) {
       console.error("Failed to publish service", e);
@@ -566,9 +566,15 @@ function DashboardInner() {
                     </div>
 
                     <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#008744]">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Published
-                      </span>
+                      {srv.status === "published" ? (
+                        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#008744]">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Published
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#B45309] bg-[#FEF3C7] px-2 py-0.5 rounded-full">
+                          <Clock className="w-3 h-3" /> Verification Pending
+                        </span>
+                      )}
                       <Link
                         href={`/services/${srv.slug || srv._id}`}
                         target="_blank"
@@ -649,7 +655,7 @@ function DashboardInner() {
         onClose={() => setIsVerifyModalOpen(false)}
         onSuccess={() => {
           fetchDashboardData();
-          showToast("Ghana Card identity submitted for admin review!");
+          showToast("Verification request submitted for admin review!");
         }}
         currentStatus={data?.metrics?.verificationStatus}
       />

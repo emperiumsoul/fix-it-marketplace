@@ -239,6 +239,7 @@ export function ServiceDetailView({ data }: ServiceDetailViewProps) {
         onClose={() => setIsContactModalOpen(false)}
         providerName={cleanProvider}
         serviceTitle={cleanTitle}
+        providerPhone={data.provider?.whatsappNumber || data.provider?.phoneNumber}
       />
     </div>
   );

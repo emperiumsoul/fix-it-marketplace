@@ -1,22 +1,14 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { getAuthenticatedUserId } from '@/lib/auth/get-user'
 import { getServerClient } from '@/sanity/lib/server-client'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { ghanaCardNumber } = body
-
-    if (!ghanaCardNumber || typeof ghanaCardNumber !== 'string' || ghanaCardNumber.trim().length < 5) {
-      return NextResponse.json(
-        { error: 'A valid Ghana Card number is required (e.g., GHA-712345678-9)' },
-        { status: 400 }
-      )
     }
 
     const client = getServerClient({ useWriteToken: true })
@@ -44,12 +36,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       verificationStatus: 'pending',
-      message: 'Identity verification submitted. An administrator will review your Ghana Card details.',
+      message: 'Verification request submitted! An administrator will review your provider profile.',
     })
   } catch (error) {
     console.error('[PROVIDER_VERIFY_IDENTITY_ERROR]', error)
     return NextResponse.json(
-      { error: 'Failed to submit identity verification' },
+      { error: 'Failed to submit provider verification request' },
       { status: 500 }
     )
   }

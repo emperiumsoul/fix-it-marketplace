@@ -195,7 +195,7 @@ export function VisibilityStepsCard({
           </div>
         </div>
 
-        {/* Step 3: Identity Verification (Ghana Card) */}
+        {/* Step 3: Provider Profile Verification */}
         {!serviceCompleted ? (
           <div className="p-5 rounded-[12px] border border-[#F3F4F6] bg-[#FAFAFA] opacity-75">
             <div className="flex items-start justify-between gap-4">
@@ -208,10 +208,10 @@ export function VisibilityStepsCard({
                     Step 3
                   </span>
                   <h4 className="font-grotesque font-bold text-[15px] text-[#71717A]">
-                    Verify your identity (Ghana Card / ID)
+                    Verify your provider profile
                   </h4>
                   <p className="text-[13px] text-[#A1A1AA] mt-0.5 max-w-xl">
-                    Submit official Ghanaian identification to get the trusted & verified provider badge. Unlocks after creating your first service.
+                    Get approved by Fix it administrators to receive the verified provider badge and publish services. Unlocks after creating your first service.
                   </p>
                 </div>
               </div>
@@ -258,10 +258,10 @@ export function VisibilityStepsCard({
                     </span>
                   </div>
                   <h4 className="font-grotesque font-bold text-[16px] text-[#222325] mt-0.5">
-                    Verify your identity (Ghana Card / ID)
+                    Verify your provider profile
                   </h4>
                   <p className="text-[13px] text-[#62646A] mt-1 max-w-xl leading-relaxed">
-                    Submit official Ghanaian identification to get the verified provider badge and build trust with customers across Ghana.
+                    Get approved by Fix it administrators to receive the verified provider badge and have your services listed across the marketplace.
                   </p>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export function VisibilityStepsCard({
                     onClick={onVerifyIdentity}
                     className="px-4 py-2 rounded-[8px] bg-[#18181B] hover:bg-[#27272A] text-white text-[13px] font-semibold transition-colors cursor-pointer shadow-xs"
                   >
-                    Verify identity
+                    Request verification
                   </button>
                 )}
               </div>

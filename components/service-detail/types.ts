@@ -25,6 +25,8 @@ export interface ServiceProviderData {
   languages?: string[];
   serviceAreas?: string[];
   availability?: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
 }
 
 export interface ServiceProjectData {

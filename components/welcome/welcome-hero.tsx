@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { FileText, Smartphone, Briefcase } from "lucide-react";
+import { FileText, Briefcase } from "lucide-react";
 import { ProjectBriefModal } from "./project-brief-modal";
-import { AppDownloadModal } from "./app-download-modal";
 
 export interface WelcomeHeroProps {
   userName?: string;
@@ -15,7 +14,6 @@ export function WelcomeHero({
   onOpenRoleModal,
 }: WelcomeHeroProps) {
   const [isBriefOpen, setIsBriefOpen] = React.useState(false);
-  const [isAppOpen, setIsAppOpen] = React.useState(false);
 
   return (
     <section className="relative w-full max-w-[1280px] mx-auto px-4 sm:px-6 pt-8 pb-4">
@@ -29,8 +27,8 @@ export function WelcomeHero({
         </h1>
       </div>
 
-      {/* 3 Recommended & Progress Cards matching 3.png */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* Recommended & Progress Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Card 1: Post a project brief */}
         <button
           type="button"
@@ -55,31 +53,7 @@ export function WelcomeHero({
           </div>
         </button>
 
-        {/* Card 2: Download the Fix it app */}
-        <button
-          type="button"
-          onClick={() => setIsAppOpen(true)}
-          className="flex flex-col justify-between p-5 sm:p-6 rounded-[14px] bg-white border border-[#E5E7EB] hover:border-[#008744] hover:shadow-sm transition-all group cursor-pointer text-left"
-        >
-          <span className="text-[11px] font-semibold text-[#74767E] uppercase tracking-wider mb-4 block">
-            Recommended for you
-          </span>
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-[10px] bg-[#F7F7F7] group-hover:bg-[#E8F8F0] text-[#222325] group-hover:text-[#008744] flex items-center justify-center shrink-0 transition-colors">
-              <Smartphone className="w-5 h-5 stroke-[1.75]" />
-            </div>
-            <div>
-              <h3 className="font-grotesque font-bold text-[16px] text-[#222325] group-hover:text-[#008744] transition-colors">
-                Download the Fix it app
-              </h3>
-              <p className="text-[13px] text-[#62646A] mt-1 leading-[18px]">
-                Stay productive, anywhere you go.
-              </p>
-            </div>
-          </div>
-        </button>
-
-        {/* Card 3: Tailor Fix it to your needs */}
+        {/* Card 2: Tailor Fix it to your needs */}
         <button
           type="button"
           onClick={onOpenRoleModal}
@@ -106,7 +80,6 @@ export function WelcomeHero({
 
       {/* Interactive Modals */}
       <ProjectBriefModal isOpen={isBriefOpen} onClose={() => setIsBriefOpen(false)} />
-      <AppDownloadModal isOpen={isAppOpen} onClose={() => setIsAppOpen(false)} />
     </section>
   );
 }

@@ -4,9 +4,9 @@ import { getServerClient } from '@/sanity/lib/server-client'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { isAdmin, userId } = await checkAdminAccess()
+    const { isAdmin, userId } = await checkAdminAccess(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -48,7 +48,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { isAdmin, userId } = await checkAdminAccess()
+    const { isAdmin, userId } = await checkAdminAccess(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -85,6 +85,17 @@ export async function PATCH(request: Request) {
         verified: isVerified,
       })
       .commit()
+
+    if (isVerified) {
+      // Publish any services owned by this newly verified provider so they immediately appear
+      const providerServices = await client.fetch<{ _id: string }[]>(
+        `*[_type == "service" && (provider._ref == $providerId || provider->clerkUserId == $providerId)]{ _id }`,
+        { providerId }
+      )
+      for (const srv of providerServices) {
+        await client.patch(srv._id).set({ status: 'published' }).commit()
+      }
+    }
 
     return NextResponse.json({
       success: true,

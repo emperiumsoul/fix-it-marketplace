@@ -8,7 +8,6 @@ import {
   Menu,
   X,
   Search,
-  Mail,
   Heart,
   Check,
 } from "lucide-react";
@@ -113,12 +112,27 @@ export function PublicHeader({
     };
   }, [user]);
 
-  // Authoritative live API check overrides stale cached session token; initial fallback to userIsAdminRole
+  const userEmail = (
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    ""
+  ).toLowerCase();
+
+  const isEmailAdmin = React.useMemo(() => {
+    if (!userEmail) return false;
+    const adminList = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    return adminList.includes(userEmail);
+  }, [userEmail]);
+
+  // Authoritative live API check overrides stale cached session token; fallback to userIsAdminRole or isEmailAdmin
   const isAdmin = !user
     ? false
-    : isAdminFromApi !== null
-    ? isAdminFromApi
-    : Boolean(userIsAdminRole);
+    : isAdminFromApi === true
+    ? true
+    : Boolean(userIsAdminRole) || isEmailAdmin;
   const isProvider =
     user?.unsafeMetadata?.role === "provider" ||
     isAdmin ||
@@ -225,14 +239,6 @@ export function PublicHeader({
             {/* Quick utility icons matching 4.png (only for authenticated users) */}
             <div className="flex items-center gap-3 text-[#62646A] border-l border-[#E5E7EB] pl-4">
               <HeaderNotifications />
-              
-              <Link
-                href="/messages"
-                aria-label="Messages"
-                className="hover:text-[#222325] transition-colors p-1 cursor-pointer"
-              >
-                <Mail className="w-4 h-4" />
-              </Link>
 
               <Link
                 href="/saved"
@@ -349,13 +355,6 @@ export function PublicHeader({
               className="py-1.5 hover:text-[#008744]"
             >
               My Bookings & Orders
-            </Link>
-            <Link
-              href="/messages"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-[#008744]"
-            >
-              Messages & Chat
             </Link>
             <Link
               href="/saved"

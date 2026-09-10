@@ -496,65 +496,13 @@ export function VerifyIdentityModal({
   onSuccess,
   currentStatus = 'unverified',
 }: VerifyIdentityModalProps) {
-  const [ghanaCardNumber, setGhanaCardNumber] = React.useState('');
-  const [cardHolderName, setCardHolderName] = React.useState('');
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [isUploading, setIsUploading] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file (PNG, JPG, WebP)');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size must be less than 5MB');
-      return;
-    }
-
-    setIsUploading(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to upload Ghana Card photo');
-        setIsUploading(false);
-        return;
-      }
-
-      setPreviewUrl(data.url);
-    } catch (err) {
-      console.error(err);
-      setError('Error uploading image');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ghanaCardNumber.trim()) {
-      setError('Please enter your Ghana Card number');
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
@@ -562,10 +510,6 @@ export function VerifyIdentityModal({
       const res = await fetch('/api/provider/verify-identity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ghanaCardNumber: ghanaCardNumber.trim(),
-          cardHolderName: cardHolderName.trim(),
-        }),
       });
 
       const resData = await res.json();
@@ -597,16 +541,21 @@ export function VerifyIdentityModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-grotesque font-bold text-[18px] text-[#222325]">
-                  Verify Your Identity
+                  Provider Verification
                 </h3>
                 {currentStatus === 'pending' && (
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E]">
                     In Review
                   </span>
                 )}
+                {currentStatus === 'verified' && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#E8F8F0] text-[#008744]">
+                    Verified
+                  </span>
+                )}
               </div>
               <p className="text-[12px] text-[#74767E]">
-                Ghana Card / National Identification Authority
+                Fix it Marketplace Trust & Safety
               </p>
             </div>
           </div>
@@ -628,100 +577,31 @@ export function VerifyIdentityModal({
             </div>
           )}
 
-          <div className="p-3.5 rounded-[10px] bg-[#F0FDF4] border border-[#BBF7D0] text-[13px] text-[#166534]">
+          <div className="p-4 rounded-[12px] bg-[#F0FDF4] border border-[#BBF7D0] text-[13px] text-[#166534]">
             <p className="font-semibold flex items-center gap-1.5">
-              <Shield className="w-4 h-4" /> Trusted Provider Badge
+              <Shield className="w-4 h-4" /> Trusted Provider Status
             </p>
-            <p className="mt-1 text-[12px] text-[#15803D] leading-relaxed">
-              Verifying your identity unlocks customer trust, boosts your ranking in marketplace search results, and enables fast payouts via Mobile Money.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-[13px] font-semibold text-[#222325] mb-1.5">
-              Full Legal Name (as on Ghana Card) *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g., Kwame Mensah"
-              value={cardHolderName}
-              onChange={(e) => setCardHolderName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-[10px] border border-[#DADBDD] text-[14px] text-[#222325] focus:outline-hidden focus:border-[#222325]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[13px] font-semibold text-[#222325] mb-1.5">
-              Ghana Card Pin Number (PIN) *
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#74767E]">
-                <CreditCard className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                required
-                placeholder="GHA-712345678-9"
-                value={ghanaCardNumber}
-                onChange={(e) => setGhanaCardNumber(e.target.value.toUpperCase())}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-[10px] border border-[#DADBDD] text-[14px] text-[#222325] font-mono uppercase tracking-wider focus:outline-hidden focus:border-[#222325]"
-              />
-            </div>
-            <p className="text-[11px] text-[#74767E] mt-1">
-              Format: GHA-XXXXXXXXX-X issued by the National Identification Authority.
+            <p className="mt-1.5 text-[12px] text-[#15803D] leading-relaxed">
+              Every first-time service provider is reviewed and verified by Fix it administrators before their services are listed across search and category pages.
             </p>
           </div>
 
-          {/* Photo of Ghana Card */}
-          <div>
-            <label className="block text-[13px] font-semibold text-[#222325] mb-1.5">
-              Upload Front of Ghana Card (Optional)
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-
-            {previewUrl ? (
-              <div className="relative w-full h-36 rounded-[12px] border border-[#E5E7EB] overflow-hidden bg-[#F9FAFB] flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewUrl}
-                  alt="Ghana Card Preview"
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-2 right-2 px-3 py-1 rounded-[6px] bg-black/70 text-white text-[12px] font-semibold hover:bg-black transition-colors"
-                >
-                  Change Photo
-                </button>
-              </div>
-            ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-6 rounded-[12px] border-2 border-dashed border-[#DADBDD] hover:border-[#18181B] bg-[#FAFAFA] flex flex-col items-center justify-center cursor-pointer transition-colors"
-              >
-                {isUploading ? (
-                  <Loader2 className="w-6 h-6 text-[#74767E] animate-spin" />
-                ) : (
-                  <>
-                    <Upload className="w-6 h-6 text-[#74767E] mb-1.5" />
-                    <span className="text-[13px] font-medium text-[#222325]">
-                      Click to upload Ghana Card photo
-                    </span>
-                    <span className="text-[11px] text-[#74767E] mt-0.5">
-                      JPG, PNG or WebP up to 5MB
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
+          <div className="p-4 rounded-[12px] bg-[#F9FAFB] border border-[#E5E7EB] space-y-2 text-[13px] text-[#404145]">
+            <div className="font-semibold text-[#222325]">How verification works:</div>
+            <ul className="space-y-1.5 text-[12px] text-[#62646A]">
+              <li className="flex items-start gap-2">
+                <span className="text-[#008744] font-bold">1.</span>
+                <span>You submit your profile and services for administrator review.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#008744] font-bold">2.</span>
+                <span>Administrators verify your trade specialty and profile readiness.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#008744] font-bold">3.</span>
+                <span>Upon approval, your services instantly go live to customers across Ghana.</span>
+              </li>
+            </ul>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#F3F4F6]">
@@ -730,22 +610,32 @@ export function VerifyIdentityModal({
               onClick={onClose}
               className="px-4 py-2 text-[14px] font-medium text-[#74767E] hover:text-[#222325] cursor-pointer"
             >
-              Cancel
+              Close
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || isUploading}
-              className="px-5 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] disabled:opacity-50 text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                'Submit for Verification'
-              )}
-            </button>
+            {currentStatus === 'verified' ? (
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#E8F8F0] text-[#008744] text-[13px] font-semibold rounded-[10px]">
+                <CheckCircle2 className="w-4 h-4" /> Already Verified
+              </span>
+            ) : currentStatus === 'pending' ? (
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FEF3C7] text-[#92400E] text-[13px] font-semibold rounded-[10px]">
+                <Clock className="w-4 h-4" /> Pending Admin Review
+              </span>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-[10px] bg-[#18181B] hover:bg-[#27272A] disabled:opacity-50 text-white text-[14px] font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Request Verification'
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -1135,7 +1025,7 @@ export function PublishServiceModal({
             </div>
 
             <div className="flex items-center justify-between text-[13px]">
-              <span className="text-[#222325]">3. Ghana Card identity verification</span>
+              <span className="text-[#222325]">3. Provider profile verification</span>
               {isIdentityVerified ? (
                 <span className="inline-flex items-center gap-1 text-[#008744] font-semibold text-[12px]">
                   <CheckCircle2 className="w-4 h-4" /> Verified

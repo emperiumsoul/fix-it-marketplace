@@ -5,9 +5,9 @@ import { getServerClient } from '@/sanity/lib/server-client'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { isAdmin, userId } = await checkAdminAccess()
+    const { isAdmin, userId } = await checkAdminAccess(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -46,7 +46,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { isAdmin, userId } = await checkAdminAccess()
+    const { isAdmin, userId } = await checkAdminAccess(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

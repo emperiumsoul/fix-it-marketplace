@@ -52,6 +52,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const { slug } = await params;
 
   let serviceData: ServiceDetailData | null = null;
+  let isProviderVerified = true;
 
   try {
     const client = getServerClient();
@@ -97,6 +98,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           languages,
           serviceAreas,
           availability,
+          phone,
+          phoneNumber,
+          whatsappNumber,
+          verificationStatus,
+          verified,
           portfolio[]{
             title,
             description,
@@ -108,6 +114,10 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     );
 
     if (raw?.title) {
+      if (raw.provider) {
+        isProviderVerified = raw.provider.verificationStatus === "verified" || raw.provider.verified === true;
+      }
+
       // Extract plain text from description blocks if Portable Text
       let descriptionText = raw.summary || "";
       if (Array.isArray(raw.description)) {
@@ -154,9 +164,9 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
         })
       );
 
-      // Fetch related services for recommendations
+      // Fetch related services for recommendations (strictly verified providers)
       const relatedDocs = await client.fetch(
-        `*[_type == "service" && _id != $currentId][0...6]{
+        `*[_type == "service" && _id != $currentId && status == "published" && (provider->verificationStatus == "verified" || provider->verified == true)][0...6]{
           title,
           "slug": slug.current,
           startingPrice,
@@ -193,6 +203,8 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           languages: raw.provider?.languages || ["English", "Twi"],
           serviceAreas: raw.provider?.serviceAreas || raw.serviceAreas || ["Accra"],
           availability: raw.provider?.availability || "By appointment",
+          phoneNumber: raw.provider?.phoneNumber || raw.provider?.phone,
+          whatsappNumber: raw.provider?.whatsappNumber || raw.provider?.phoneNumber || raw.provider?.phone,
         },
         startingPrice: raw.startingPrice || 150,
         currency: raw.currency || "GH₵",
@@ -312,6 +324,16 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     <div className="min-h-screen flex flex-col bg-white text-[#404145] font-satoshi selection:bg-[#F3FDF9] selection:text-[#003912]">
       {/* Top Header matching 5.png */}
       <PublicHeader />
+
+      {/* Unverified Provider Alert Banner */}
+      {!isProviderVerified && (
+        <div className="bg-[#FFFBEB] border-b border-[#FDE68A] px-4 py-3 text-center text-[13px] text-[#92400E] font-medium flex items-center justify-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse" />
+          <span>
+            <strong>First-Time Provider Verification in Progress:</strong> This provider is currently being verified by Fix it Ghana administrators. This service will be fully listed on search and open for customer bookings upon approval.
+          </span>
+        </div>
+      )}
 
       {/* Category Nav Strip */}
       <CategoryNav />

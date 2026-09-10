@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@clerk/nextjs/server'
 import { getServerClient } from '@/sanity/lib/server-client'
+import { getAuthenticatedUserId, getAuthenticatedUser } from '@/lib/auth/get-user'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,9 +19,9 @@ function slugify(text: string): string {
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized. Please sign in to create a service.' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -41,17 +41,37 @@ export async function POST(request: Request) {
 
     const client = getServerClient({ useWriteToken: true })
 
-    // 1. Find provider profile ID and photo asset
-    const provider = await client.fetch<{ _id: string; photoAsset?: string } | null>(
-      `*[_type == "providerProfile" && clerkUserId == $userId][0]{ _id, "photoAsset": photo.asset._ref }`,
+    // 1. Find provider profile ID, verification status, and photo asset
+    let provider = await client.fetch<{
+      _id: string
+      photoAsset?: string
+      verificationStatus?: string
+      verified?: boolean
+    } | null>(
+      `*[_type == "providerProfile" && clerkUserId == $userId][0]{ _id, "photoAsset": photo.asset._ref, verificationStatus, verified }`,
       { userId }
     )
 
     if (!provider) {
-      return NextResponse.json(
-        { error: 'Please complete your provider profile before publishing a service.' },
-        { status: 400 }
-      )
+      // Auto-provision a starter provider profile so provider isn't blocked
+      const user = await getAuthenticatedUser(request)
+      const displayName =
+        [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
+        user?.username ||
+        'Service Provider'
+
+      const created = await client.create({
+        _type: 'providerProfile',
+        clerkUserId: userId,
+        displayName,
+        slug: { _type: 'slug', current: slugify(`${displayName}-${userId.slice(-6)}`) },
+        headline: `${categoryName || 'Home Services'} Professional in Ghana`,
+        serviceAreas: [serviceArea || 'Accra & Greater Accra'],
+        verificationStatus: 'pending',
+        verified: false,
+        onboardingStatus: 'completed',
+      })
+      provider = { _id: created._id }
     }
 
     // 2. Find matching category
@@ -100,6 +120,10 @@ export async function POST(request: Request) {
     const baseSlug = slugify(title)
     const slug = `${baseSlug}-${Date.now().toString(36)}`
 
+    const isVerifiedProvider =
+      provider?.verificationStatus === 'verified' || provider?.verified === true
+    const serviceStatus = isVerifiedProvider ? 'published' : 'draft'
+
     const serviceDoc: Record<string, unknown> & { _type: 'service' } = {
       _type: 'service',
       title,
@@ -107,7 +131,7 @@ export async function POST(request: Request) {
       summary: description.slice(0, 160) || `Professional ${title} in ${serviceArea}, Ghana.`,
       startingPrice: Number(startingPrice) || 150,
       currency: 'GHS',
-      status: 'published',
+      status: serviceStatus,
       provider: {
         _type: 'reference',
         _ref: provider._id,
@@ -178,7 +202,15 @@ export async function POST(request: Request) {
       console.warn('[PROVIDER_SERVICE_REVALIDATE_WARN]', revalErr)
     }
 
-    return NextResponse.json({ success: true, serviceId: created._id })
+    return NextResponse.json({
+      success: true,
+      serviceId: created._id,
+      isVerifiedProvider,
+      status: serviceStatus,
+      message: isVerifiedProvider
+        ? 'Service published successfully.'
+        : 'Service created! It will be listed in marketplace search once your provider verification is approved by an administrator.',
+    })
   } catch (error) {
     console.error('[PROVIDER_SERVICE_CREATE_ERROR]', error)
     return NextResponse.json(

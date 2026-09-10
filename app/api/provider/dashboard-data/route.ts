@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { getServerClient } from '@/sanity/lib/server-client'
+import { getAuthenticatedUserId } from '@/lib/auth/get-user'
 
-export async function GET() {
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -73,7 +75,13 @@ interface BookingRecord {
 
     // 3. Fetch real bookings
     const bookings = await client.fetch<BookingRecord[]>(
-      `*[_type == "booking" && (provider->clerkUserId == $userId || provider._ref == $profileId)] | order(scheduledTime desc){
+      `*[_type == "booking" && (
+        provider->clerkUserId == $userId ||
+        provider._ref == $profileId ||
+        providerClerkUserId == $userId ||
+        service->provider->clerkUserId == $userId ||
+        service->provider._ref == $profileId
+      )] | order(_createdAt desc, scheduledTime desc){
         _id,
         "customerName": customer->fullName,
         "customerEmail": customer->email,

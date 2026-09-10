@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
 import { getServerClient } from '@/sanity/lib/server-client'
 import { checkAdminAccess } from '@/lib/auth/admin'
+import { getAuthenticatedUserId, getAuthenticatedUser } from '@/lib/auth/get-user'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized. Please sign in to book a service.' }, { status: 401 })
     }
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     )
 
     if (!customerProfile) {
-      const user = await currentUser()
+      const user = await getAuthenticatedUser(request)
       const fullName =
         [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
         user?.username ||
@@ -228,7 +228,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -252,11 +252,13 @@ export async function PATCH(request: Request) {
       _id: string
       customerClerkUserId: string
       providerClerkUserId: string
+      providerRefClerkUserId?: string
     } | null>(
       `*[_type == "booking" && _id == $bookingId][0]{
         _id,
         customerClerkUserId,
-        providerClerkUserId
+        providerClerkUserId,
+        "providerRefClerkUserId": provider->clerkUserId
       }`,
       { bookingId }
     )
@@ -266,7 +268,9 @@ export async function PATCH(request: Request) {
     }
 
     const isParticipant =
-      booking.customerClerkUserId === userId || booking.providerClerkUserId === userId
+      booking.customerClerkUserId === userId ||
+      booking.providerClerkUserId === userId ||
+      booking.providerRefClerkUserId === userId
 
     if (!isParticipant) {
       const { isAdmin } = await checkAdminAccess()

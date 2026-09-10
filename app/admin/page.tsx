@@ -88,13 +88,28 @@ export default function AdminDashboardPage() {
     };
   }, [user, isUserLoaded]);
 
+  const userEmail = (
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    ""
+  ).toLowerCase();
+
+  const isEmailAdmin = React.useMemo(() => {
+    if (!userEmail) return false;
+    const adminList = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    return adminList.includes(userEmail);
+  }, [userEmail]);
+
   const isAdmin: boolean | null = !isUserLoaded
     ? null
     : !user
     ? false
-    : isAdminFromApi !== null
-    ? isAdminFromApi
-    : Boolean(userIsAdminRole);
+    : isAdminFromApi === true
+    ? true
+    : Boolean(userIsAdminRole) || isEmailAdmin;
 
   const fetchData = React.useCallback(() => {
     if (isAdmin !== true) return;
@@ -379,7 +394,7 @@ export default function AdminDashboardPage() {
             <h3 className="font-grotesque font-bold text-[24px] text-[#008744] mt-2">
               {verifiedCount}
             </h3>
-            <p className="text-[12px] text-[#74767E] mt-0.5">Approved with Ghana Card</p>
+            <p className="text-[12px] text-[#74767E] mt-0.5">Approved Providers</p>
           </div>
 
           <div className="p-5 rounded-[14px] bg-white border border-[#E5E7EB] shadow-2xs">
