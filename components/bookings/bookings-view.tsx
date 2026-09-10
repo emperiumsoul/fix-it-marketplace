@@ -21,6 +21,7 @@ export interface CustomerBooking {
   id: string;
   providerName: string;
   providerInitial: string;
+  providerPhone?: string;
   serviceTitle: string;
   serviceSlug: string;
   packageName: string;
@@ -95,20 +96,6 @@ const INITIAL_CUSTOMER_BOOKINGS: CustomerBooking[] = [
     userRating: 5,
     userReviewText: "Superb attention to detail! Akosua and her team arrived right on time and left our home spotless.",
   },
-  {
-    id: "BK-11029",
-    providerName: "SwiftHaul Ghana",
-    providerInitial: "S",
-    serviceTitle: "Apartment Relocation & Moving Services",
-    serviceSlug: "moving-relocation-services",
-    packageName: "Studio / 1-Bedroom Apartment Relocation",
-    scope: "Moving personal furniture and appliances from Osu to Tema Community 6.",
-    price: 500,
-    scheduledTime: "2026-08-28T14:00:00Z",
-    address: "Apartment 4B, Ringway Estates, Osu, Accra",
-    status: "cancelled",
-    paymentStatus: "unpaid",
-  },
 ];
 
 export function BookingsView() {
@@ -120,7 +107,10 @@ export function BookingsView() {
       const saved = localStorage.getItem("fixit_customer_bookings");
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((b: CustomerBooking) => b.status !== "cancelled");
+          }
         } catch {
           // fallback
         }
@@ -142,6 +132,7 @@ export function BookingsView() {
           interface SanityBookingRecord {
             _id: string;
             providerName?: string;
+            providerPhone?: string;
             providerPhotoUrl?: string;
             serviceTitle?: string;
             serviceSlug?: string;
@@ -156,33 +147,34 @@ export function BookingsView() {
             _createdAt?: string;
           }
 
-          const liveItems: CustomerBooking[] = resData.bookings.map((b: SanityBookingRecord) => ({
-            id: b._id,
-            providerName: b.providerName || "Local Pro",
-            providerInitial: (b.providerName || "P").charAt(0).toUpperCase(),
-            serviceTitle: b.serviceTitle || b.agreedPackageName || "Service Booking",
-            serviceSlug: b.serviceSlug || "service",
-            packageName: b.agreedPackageName || "Standard Package",
-            scope: b.agreedScope || "Requested service appointment",
-            price: b.agreedPrice || 0,
-            scheduledTime: b.scheduledTime || new Date().toISOString(),
-            address: b.serviceAddress || "Accra, Ghana",
-            status: b.jobStatus || "requested",
-            paymentStatus: b.paymentStatus || "unpaid",
-          }));
+          // Filter out any cancelled bookings so they completely disappear
+          const liveItems: CustomerBooking[] = resData.bookings
+            .filter((b: SanityBookingRecord) => b.jobStatus !== "cancelled")
+            .map((b: SanityBookingRecord) => ({
+              id: b._id,
+              providerName: b.providerName || "Local Pro",
+              providerInitial: (b.providerName || "P").charAt(0).toUpperCase(),
+              providerPhone: b.providerPhone,
+              serviceTitle: b.serviceTitle || b.agreedPackageName || "Service Booking",
+              serviceSlug: b.serviceSlug || "service",
+              packageName: b.agreedPackageName || "Standard Package",
+              scope: b.agreedScope || "Requested service appointment",
+              price: b.agreedPrice || 0,
+              scheduledTime: b.scheduledTime || new Date().toISOString(),
+              address: b.serviceAddress || "Accra, Ghana",
+              status: b.jobStatus || "requested",
+              paymentStatus: b.paymentStatus || "unpaid",
+            }));
 
-          if (liveItems.length > 0) {
-            setBookings((prev) => {
-              // Combine live bookings first, then any non-duplicate local items
-              const liveIds = new Set(liveItems.map((item) => item.id));
-              const remaining = prev.filter((item) => !liveIds.has(item.id));
-              const merged = [...liveItems, ...remaining];
-              if (typeof window !== "undefined") {
-                localStorage.setItem("fixit_customer_bookings", JSON.stringify(merged));
-              }
-              return merged;
-            });
-          }
+          setBookings((prev) => {
+            const liveIds = new Set(liveItems.map((item) => item.id));
+            const remaining = prev.filter((item) => !liveIds.has(item.id) && item.status !== "cancelled");
+            const merged = [...liveItems, ...remaining];
+            if (typeof window !== "undefined") {
+              localStorage.setItem("fixit_customer_bookings", JSON.stringify(merged));
+            }
+            return merged;
+          });
         }
       })
       .catch((err) => console.warn("Failed to fetch customer bookings:", err));
@@ -206,16 +198,18 @@ export function BookingsView() {
   };
 
   const saveBookings = (updated: CustomerBooking[]) => {
-    setBookings(updated);
+    const activeOnly = updated.filter((b) => b.status !== "cancelled");
+    setBookings(activeOnly);
     if (typeof window !== "undefined") {
-      localStorage.setItem("fixit_customer_bookings", JSON.stringify(updated));
+      localStorage.setItem("fixit_customer_bookings", JSON.stringify(activeOnly));
     }
   };
 
   const handleCancelBooking = async (id: string) => {
-    const updated = bookings.map((b) => (b.id === id ? { ...b, status: "cancelled" as const } : b));
+    // When you cancel a booking request, it must disappear from the page
+    const updated = bookings.filter((b) => b.id !== id);
     saveBookings(updated);
-    showToast(`Booking #${id.slice(0, 8)} has been cancelled.`);
+    showToast(`Booking #${id.slice(0, 8)} has been cancelled and removed.`);
 
     try {
       await fetch("/api/bookings", {
@@ -226,6 +220,20 @@ export function BookingsView() {
     } catch (err) {
       console.warn("Failed to sync cancellation to server", err);
     }
+  };
+
+  const getWhatsAppUrl = (b: CustomerBooking) => {
+    const defaultText = `Hello ${b.providerName}, I am contacting you regarding my booking #${b.id.slice(0, 8)} for "${b.serviceTitle}" on Fix it Ghana.`;
+    const encodedMsg = encodeURIComponent(defaultText);
+
+    if (b.providerPhone) {
+      let digits = b.providerPhone.replace(/[^\d]/g, "");
+      if (digits.startsWith("0")) digits = "233" + digits.slice(1);
+      else if (!digits.startsWith("233") && digits.length <= 10) digits = "233" + digits;
+      return `https://wa.me/${digits}?text=${encodedMsg}`;
+    }
+
+    return `https://api.whatsapp.com/send?text=${encodedMsg}`;
   };
 
   const handleOpenReview = (booking: CustomerBooking) => {
@@ -253,10 +261,14 @@ export function BookingsView() {
     showToast(`Thank you! Your verified review for ${activeReviewBooking.providerName} has been submitted.`);
   };
 
-  const filteredBookings = bookings.filter((b) => {
-    if (filter === "all") return true;
-    return b.status === filter;
-  });
+  const activeBookings = React.useMemo(() => {
+    return bookings.filter((b) => b.status !== "cancelled");
+  }, [bookings]);
+
+  const filteredBookings = React.useMemo(() => {
+    if (filter === "all") return activeBookings;
+    return activeBookings.filter((b) => b.status === filter);
+  }, [activeBookings, filter]);
 
   const getStatusBadge = (status: CustomerBooking["status"]) => {
     switch (status) {
@@ -360,26 +372,26 @@ export function BookingsView() {
       {/* Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-[#E5E7EB] pb-3 text-[14px]">
         {[
-          { id: "all", label: "All Bookings", count: bookings.length },
+          { id: "all", label: "All Bookings", count: activeBookings.length },
           {
             id: "requested",
             label: "Requested",
-            count: bookings.filter((b) => b.status === "requested").length,
+            count: activeBookings.filter((b) => b.status === "requested").length,
           },
           {
             id: "confirmed",
             label: "Confirmed",
-            count: bookings.filter((b) => b.status === "confirmed").length,
+            count: activeBookings.filter((b) => b.status === "confirmed").length,
           },
           {
             id: "in_progress",
             label: "In Progress",
-            count: bookings.filter((b) => b.status === "in_progress").length,
+            count: activeBookings.filter((b) => b.status === "in_progress").length,
           },
           {
             id: "completed",
             label: "Completed",
-            count: bookings.filter((b) => b.status === "completed").length,
+            count: activeBookings.filter((b) => b.status === "completed").length,
           },
         ].map((tab) => (
           <button
@@ -523,12 +535,10 @@ export function BookingsView() {
                   </span>
 
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const msg = encodeURIComponent(`Hello ${b.providerName}, I am contacting you regarding my booking #${b.id.slice(0, 8)} for "${b.serviceTitle}" on Fix it Ghana.`);
-                        window.open(`https://wa.me/233244123456?text=${msg}`, "_blank", "noopener,noreferrer");
-                      }}
+                    <a
+                      href={getWhatsAppUrl(b)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-[8px] border border-[#25D366] bg-[#F0FDF4] hover:bg-[#DCFCE7] text-[13px] font-semibold text-[#15803D] transition-colors cursor-pointer shadow-2xs"
                     >
                       <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-[#25D366]" aria-hidden="true">
@@ -536,7 +546,7 @@ export function BookingsView() {
                         <path d="M12.004 0C5.384 0 0 5.385 0 12.006c0 2.115.552 4.179 1.602 6.001L.06 24l6.168-1.618c1.758.96 3.743 1.465 5.776 1.465 6.618 0 12.002-5.385 12.002-12.006S18.622 0 12.004 0zm0 21.968c-1.803 0-3.57-.486-5.11-1.405l-.367-.218-3.799.996 1.014-3.702-.239-.38A9.927 9.927 0 012.04 12.006c0-5.494 4.47-9.965 9.964-9.965 5.495 0 9.966 4.471 9.966 9.965 0 5.495-4.471 9.962-9.966 9.962z" />
                       </svg>
                       <span>Chat on WhatsApp</span>
-                    </button>
+                    </a>
 
                     {b.status === "completed" && !b.hasReviewed && (
                       <button

@@ -57,7 +57,7 @@ export default function MessagesPage() {
           <div className="mt-10 pt-6 border-t border-[#F3F4F6] w-full flex items-center justify-center gap-2 text-[12px] text-[#74767E]">
             <span>Need marketplace assistance?</span>
             <a
-              href="https://wa.me/233244123456?text=Hello%20Fix%20it%20Ghana%2C%20I%20need%20support%20with%20my%20service"
+              href="https://api.whatsapp.com/send?text=Hello%20Fix%20it%20Ghana%2C%20I%20need%20support%20with%20my%20service"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#008744] font-semibold hover:underline inline-flex items-center gap-1"

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@clerk/nextjs/server'
+import { getAuthenticatedUserId } from '@/lib/auth/get-user'
 import { getServerClient } from '@/sanity/lib/server-client'
 
 interface WorkExperienceInput {
@@ -44,7 +44,7 @@ function slugify(text: string): string {
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     const {
       displayName,
       headline,
+      phone,
       primaryService,
       tradeCategory,
       startingPrice = 150,
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
       certifications: formattedCertifications,
       onboardingStatus: 'verified',
       verified: true,
+      ...(phone ? { phone: phone.trim() } : {}),
     }
 
     if (photoAssetId) {
@@ -312,9 +314,9 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { userId } = await auth()
+    const userId = await getAuthenticatedUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -325,6 +327,7 @@ export async function GET() {
         _id,
         displayName,
         headline,
+        phone,
         clerkUserId,
         expertise,
         languages,

@@ -19,7 +19,8 @@ export async function GET(request: Request) {
 
     let filter = `_type == "booking" && (customerClerkUserId == $userId || providerClerkUserId == $userId || provider->clerkUserId == $userId)`
     if (role === 'customer') {
-      filter = `_type == "booking" && customerClerkUserId == $userId`
+      // Cancelled bookings must disappear from customer page
+      filter = `_type == "booking" && customerClerkUserId == $userId && jobStatus != "cancelled"`
     } else if (role === 'provider') {
       filter = `_type == "booking" && (providerClerkUserId == $userId || provider->clerkUserId == $userId)`
     }
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
         "customerPhone": customer->phone,
         "providerName": provider->displayName,
         "providerPhotoUrl": provider->photo.asset->url,
+        "providerPhone": provider->phone,
         "serviceTitle": service->title,
         "serviceSlug": service->slug.current,
         agreedPackageName,

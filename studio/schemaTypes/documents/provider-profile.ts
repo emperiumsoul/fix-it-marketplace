@@ -79,6 +79,12 @@ export const providerProfile = defineType({
       description: 'Cities or regions served in Ghana (e.g. Accra, Tema, Kumasi, Takoradi, East Legon).',
     }),
     defineField({
+      name: 'phone',
+      title: 'WhatsApp Phone Number',
+      type: 'string',
+      description: 'Active WhatsApp contact number (e.g. +233 24 123 4567 or 0241234567).',
+    }),
+    defineField({
       name: 'availability',
       title: 'Availability',
       type: 'string',

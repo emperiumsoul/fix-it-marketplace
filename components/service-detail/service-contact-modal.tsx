@@ -39,22 +39,24 @@ export function ServiceContactModal({
 
   if (!isOpen) return null;
 
-  // Format Ghana phone number for wa.me
-  const formatWhatsAppNumber = (phone?: string): string => {
-    if (!phone) return "233244123456"; // Default Ghana business contact
-    let clean = phone.replace(/[^\d+]/g, "");
-    if (clean.startsWith("+")) clean = clean.slice(1);
-    if (clean.startsWith("0")) clean = `233${clean.slice(1)}`;
-    if (!clean.startsWith("233") && clean.length <= 10) clean = `233${clean}`;
-    return clean || "233244123456";
+  // Format Ghana phone number for wa.me or api.whatsapp.com
+  const getWhatsAppUrl = (phone?: string, text?: string): string => {
+    const encodedText = encodeURIComponent((text || "").trim());
+    if (phone && phone.trim()) {
+      let clean = phone.replace(/[^\d+]/g, "");
+      if (clean.startsWith("+")) clean = clean.slice(1);
+      if (clean.startsWith("0")) clean = `233${clean.slice(1)}`;
+      if (!clean.startsWith("233") && clean.length <= 10) clean = `233${clean}`;
+      if (clean.length >= 9) {
+        return `https://wa.me/${clean}?text=${encodedText}`;
+      }
+    }
+    return `https://api.whatsapp.com/send?text=${encodedText}`;
   };
-
-  const targetNumber = formatWhatsAppNumber(providerPhone);
 
   const handleOpenWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
-    const encodedText = encodeURIComponent(message.trim());
-    const url = `https://wa.me/${targetNumber}?text=${encodedText}`;
+    const url = getWhatsAppUrl(providerPhone, message);
     window.open(url, "_blank", "noopener,noreferrer");
     onClose();
   };

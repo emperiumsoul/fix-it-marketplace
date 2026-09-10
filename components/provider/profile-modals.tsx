@@ -429,6 +429,7 @@ export function EditBasicInfoModal({
   initialName,
   initialHeadline,
   initialLanguages,
+  initialPhone,
   onSave,
 }: {
   isOpen: boolean;
@@ -436,7 +437,8 @@ export function EditBasicInfoModal({
   initialName: string;
   initialHeadline: string;
   initialLanguages: string[];
-  onSave: (data: { displayName: string; headline: string; languages: string[]; trade: string }) => void;
+  initialPhone?: string;
+  onSave: (data: { displayName: string; headline: string; languages: string[]; trade: string; phone?: string }) => void;
 }) {
   if (!isOpen) return null;
 
@@ -446,6 +448,7 @@ export function EditBasicInfoModal({
       initialName={initialName}
       initialHeadline={initialHeadline}
       initialLanguages={initialLanguages}
+      initialPhone={initialPhone}
       onSave={onSave}
     />
   );
@@ -467,15 +470,18 @@ function EditBasicInfoForm({
   initialName,
   initialHeadline,
   initialLanguages,
+  initialPhone,
   onSave,
 }: {
   onClose: () => void;
   initialName: string;
   initialHeadline: string;
   initialLanguages: string[];
-  onSave: (data: { displayName: string; headline: string; languages: string[]; trade: string }) => void;
+  initialPhone?: string;
+  onSave: (data: { displayName: string; headline: string; languages: string[]; trade: string; phone?: string }) => void;
 }) {
   const [displayName, setDisplayName] = React.useState(initialName);
+  const [phone, setPhone] = React.useState(initialPhone || "");
   const [trade, setTrade] = React.useState(() => {
     const lower = (initialHeadline || "").toLowerCase();
     if (lower.includes("plumb")) return "Plumbing";
@@ -507,6 +513,7 @@ function EditBasicInfoForm({
       headline: headline.trim() || trade,
       languages: langs.length > 0 ? langs : ["English", "Twi"],
       trade,
+      phone: phone.trim() || undefined,
     });
     onClose();
   };
@@ -596,6 +603,22 @@ function EditBasicInfoForm({
               onChange={(e) => setLangInput(e.target.value)}
               className="w-full h-[40px] px-3 rounded-[8px] border border-[#DADBDD] text-[13px] text-[#222325] focus:outline-none focus:border-[#222325]"
             />
+          </div>
+
+          <div>
+            <label className="block text-[13px] font-semibold text-[#222325] mb-1">
+              WhatsApp Phone Number
+            </label>
+            <input
+              type="tel"
+              placeholder="e.g. 024 123 4567 or +233 24 123 4567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full h-[40px] px-3 rounded-[8px] border border-[#DADBDD] text-[13px] text-[#222325] focus:outline-none focus:border-[#222325]"
+            />
+            <p className="text-[11px] text-[#74767E] mt-1">
+              Customers will use this number to chat with you on WhatsApp regarding their bookings.
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

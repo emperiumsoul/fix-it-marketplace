@@ -229,6 +229,7 @@ export function OnboardingProfileView() {
     "English",
     "Twi",
   ]);
+  const [phone, setPhone] = React.useState<string>("");
   const locationName = "Ghana";
 
   // Dynamic active trade config derived from headline
@@ -269,6 +270,7 @@ export function OnboardingProfileView() {
         const p = data.profile;
         if (p.displayName) setDisplayName(p.displayName);
         if (p.headline) setHeadline(p.headline);
+        if (p.phone) setPhone(p.phone);
         if (p.languages && p.languages.length > 0) setLanguages(p.languages);
         if (p.photoUrl) setPhotoUrl(p.photoUrl);
         if (p.expertise && Array.isArray(p.expertise)) {
@@ -351,11 +353,13 @@ export function OnboardingProfileView() {
     headline: string;
     languages: string[];
     trade: string;
+    phone?: string;
   }) => {
     const newHeadline = data.headline.trim() || data.trade;
     setDisplayName(data.displayName);
     setHeadline(newHeadline);
     setLanguages(data.languages);
+    if (data.phone !== undefined) setPhone(data.phone);
 
     // Update skills to match the new trade
     const newConfig = detectTradeConfig(newHeadline);
@@ -385,6 +389,7 @@ export function OnboardingProfileView() {
       const profileData = {
         displayName: displayName.trim(),
         headline: headline.trim(),
+        phone: phone.trim() || undefined,
         primaryService: activeTrade.label,
         tradeCategory: activeTrade.id,
         languages,
@@ -808,6 +813,7 @@ export function OnboardingProfileView() {
         initialName={displayName}
         initialHeadline={headline}
         initialLanguages={languages}
+        initialPhone={phone}
         onSave={handleSaveBasicInfo}
       />
 
