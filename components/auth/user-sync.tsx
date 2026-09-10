@@ -15,11 +15,16 @@ export function UserSync() {
 
     syncedUserIdRef.current = user.id
 
-    fetch('/api/profile/sync', {
-      method: 'POST',
-    }).catch((err) => {
-      console.warn('[UserSync] Background sync to Sanity failed:', err)
-    })
+    // Non-blocking background sync with a small delay to keep login fast
+    const timer = setTimeout(() => {
+      fetch('/api/profile/sync', {
+        method: 'POST',
+      }).catch((err) => {
+        console.warn('[UserSync] Background sync to Sanity failed:', err)
+      })
+    }, 1200)
+
+    return () => clearTimeout(timer)
   }, [isSignedIn, user])
 
   return null

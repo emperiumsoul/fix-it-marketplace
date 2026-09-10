@@ -37,6 +37,11 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
   // Track explicit user actions: dismiss or force open
   const [userDismissed, setUserDismissed] = React.useState(false);
   const [userForcedOpen, setUserForcedOpen] = React.useState(false);
+  const [isClientReady, setIsClientReady] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   const resetParam = searchParams?.get("reset") === "true";
   const forceModalParam = searchParams?.get("modal") === "true";
@@ -49,21 +54,43 @@ export function PersonalizedHomepage({ initialUserName }: PersonalizedHomepagePr
     }
   }, [resetParam]);
 
-  // Determine if role is established
-  const hasRole = Boolean(
-    isSignedIn
-      ? userRole
-      : typeof window !== "undefined"
-      ? localStorage.getItem("fixit_role")
-      : null
+  // Check if role modal has been previously dismissed or completed in this browser
+  const isLocalStorageDismissed = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      localStorage.getItem("fixit_role_modal_dismissed") === "true" ||
+      Boolean(localStorage.getItem("fixit_role"))
+    );
+  }, [isClientReady, userDismissed]);
+
+  // Check if user has already completed role selection or has an existing role
+  const userMetadata = user?.unsafeMetadata as
+    | { role?: "customer" | "provider"; hasCompletedRoleSelection?: boolean }
+    | undefined;
+  const hasCompletedRole = Boolean(
+    userMetadata?.role ||
+    userMetadata?.hasCompletedRoleSelection ||
+    isLocalStorageDismissed
   );
 
-  // Determine modal open state
-  const isModalOpen =
-    userForcedOpen || forceModalParam || (!userDismissed && (!isLoaded || !hasRole));
+  // The modal should ONLY open if:
+  // 1. User manually clicked to open it (userForcedOpen or ?modal=true)
+  // 2. OR: Client has fully mounted, Clerk has finished loading (isLoaded === true),
+  //    User is signed in (isSignedIn === true),
+  //    It is a genuine FIRST-TIME user (has NOT completed role selection and has NO role),
+  //    and user has NOT dismissed it in this session or locally.
+  const isFirstTimeUser = Boolean(
+    isClientReady &&
+    isLoaded &&
+    isSignedIn &&
+    !hasCompletedRole &&
+    !userDismissed
+  );
 
-  // Can dismiss only if the user already has a recognized role
-  const canDismiss = hasRole || userForcedOpen;
+  const isModalOpen = userForcedOpen || forceModalParam || isFirstTimeUser;
+
+  // Can dismiss if the user already has a recognized role or manually opened
+  const canDismiss = hasCompletedRole || userForcedOpen || forceModalParam;
 
   // Derive personalized display name from email or user profile
   const primaryEmail =

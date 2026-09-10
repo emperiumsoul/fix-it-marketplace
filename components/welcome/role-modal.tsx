@@ -52,6 +52,7 @@ export function RoleModal({
           unsafeMetadata: {
             ...user.unsafeMetadata,
             role: selectedRole,
+            hasCompletedRoleSelection: true,
             ...(selectedRole === "customer" && derivedName
               ? { customerName: derivedName }
               : {}),
@@ -89,11 +90,26 @@ export function RoleModal({
     }
   };
 
+  const handleDismiss = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fixit_role_modal_dismissed", "true");
+    }
+    if (user && !user.unsafeMetadata?.hasCompletedRoleSelection) {
+      user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          hasCompletedRoleSelection: true,
+        },
+      }).catch(() => {});
+    }
+    onClose();
+  };
+
   return (
     <div
       role="dialog"
       aria-modal="true"
-      onClick={canDismiss ? onClose : undefined}
+      onClick={canDismiss ? handleDismiss : undefined}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
       <div
@@ -104,7 +120,7 @@ export function RoleModal({
         {canDismiss && (
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleDismiss}
             aria-label="Close modal"
             className="absolute top-5 right-5 w-8 h-8 rounded-full flex items-center justify-center text-[#74767E] hover:text-[#222325] hover:bg-[#F7F7F7] transition-colors cursor-pointer"
           >

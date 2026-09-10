@@ -12,19 +12,11 @@ export async function getAuthenticatedUserId(request?: Request): Promise<string 
   try {
     const { userId } = await auth()
     if (userId) return userId
-  } catch (err) {
+  } catch {
     // Gracefully handle clock skew or expired token rejection
   }
 
-  // 2. Try currentUser()
-  try {
-    const user = await currentUser()
-    if (user?.id) return user.id
-  } catch (err) {
-    // Fallback
-  }
-
-  // 3. Fallback: Parse Clerk __session cookie or Bearer token
+  // 2. Fast-path: Parse Clerk __session cookie or Bearer token locally
   if (request) {
     try {
       const cookieHeader = request.headers.get('cookie') || ''
@@ -52,9 +44,17 @@ export async function getAuthenticatedUserId(request?: Request): Promise<string 
           }
         }
       }
-    } catch (e) {
-      console.warn('[AUTH_FALLBACK_DECODE_ERROR]', e)
+    } catch {
+      // ignore
     }
+  }
+
+  // 3. Fallback to currentUser()
+  try {
+    const user = await currentUser()
+    if (user?.id) return user.id
+  } catch {
+    // Fallback
   }
 
   return null
