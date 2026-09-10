@@ -216,6 +216,71 @@ const SAMPLE_SERVICES: Record<string, WelcomeServiceCardItem[]> = {
 export function WelcomeExplore() {
   const [activeTab, setActiveTab] = React.useState("cleaning");
   const [savedServices, setSavedServices] = React.useState<Record<string, boolean>>({});
+  const [liveServices, setLiveServices] = React.useState<WelcomeServiceCardItem[]>([]);
+
+  React.useEffect(() => {
+    fetch('/api/services/popular')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data?.services) && data.services.length > 0) {
+          const mapped: WelcomeServiceCardItem[] = data.services.map((s: {
+            _id: string;
+            title: string;
+            slug: string;
+            startingPrice?: number;
+            currency?: string;
+            categoryTitle?: string;
+            categorySlug?: string;
+            imageUrl?: string;
+            serviceAreas?: string[];
+            provider?: {
+              displayName?: string;
+              photoUrl?: string;
+              rating?: number;
+              completedJobsCount?: number;
+            };
+          }) => {
+            const catSlug = s.categorySlug || "";
+            let mappedTab = "cleaning";
+            if (catSlug.includes("plumb") || s.title?.toLowerCase().includes("plumb")) mappedTab = "plumbing";
+            else if (catSlug.includes("electr") || s.title?.toLowerCase().includes("electr")) mappedTab = "electrical";
+            else if (catSlug.includes("paint") || s.title?.toLowerCase().includes("paint")) mappedTab = "painting";
+            else if (catSlug.includes("clean") || s.title?.toLowerCase().includes("clean")) mappedTab = "cleaning";
+
+            const defaultImg =
+              mappedTab === "plumbing"
+                ? "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=600&q=80"
+                : mappedTab === "electrical"
+                ? "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80"
+                : mappedTab === "painting"
+                ? "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=600&q=80"
+                : "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80";
+
+            return {
+              id: s._id,
+              slug: s.slug,
+              title: s.title,
+              category: s.categoryTitle || mappedTab.charAt(0).toUpperCase() + mappedTab.slice(1),
+              price: s.startingPrice || 150,
+              currency: s.currency || "GH₵",
+              rating: s.provider?.rating || 5.0,
+              reviewCount: s.provider?.completedJobsCount || 1,
+              location: s.serviceAreas?.[0] || "Accra, Ghana",
+              imageUrl: s.imageUrl || defaultImg,
+              provider: {
+                displayName: s.provider?.displayName || "Verified Provider",
+                photoUrl: s.provider?.photoUrl,
+                badge: "Verified Pro",
+              },
+              hasVideoConsultation: true,
+              _tab: mappedTab,
+            };
+          });
+          setLiveServices(mapped);
+        }
+      })
+      .catch((err) => console.error("Error loading live explore services:", err));
+  }, []);
 
   const toggleSave = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -223,7 +288,10 @@ export function WelcomeExplore() {
     setSavedServices((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const services = SAMPLE_SERVICES[activeTab] || SAMPLE_SERVICES.cleaning;
+  // Filter live services matching active tab
+  const liveForTab = liveServices.filter((s) => (s as unknown as { _tab?: string })._tab === activeTab);
+  const sampleForTab = SAMPLE_SERVICES[activeTab] || SAMPLE_SERVICES.cleaning;
+  const services = [...liveForTab, ...sampleForTab.filter((sample) => !liveForTab.some((l) => l.slug === sample.slug))];
 
   return (
     <section className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 my-12">
