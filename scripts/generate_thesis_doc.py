@@ -2,7 +2,7 @@ import os
 import docx
 from docx.shared import Inches, Pt, RGBColor, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
@@ -52,6 +52,17 @@ def set_section_page_number_type(section, num_format='lowerRoman', start=1):
 def main():
     doc = docx.Document()
 
+    # Image asset absolute paths
+    img_design_system = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\fix it design system.png"
+    img_homepage = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\1.png"
+    img_role_modal = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\2.png"
+    img_welcome_hub = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\3.png"
+    img_search_catalog = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\4.png"
+    img_service_detail = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\5.png"
+    img_provider_onboarding = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\6.png"
+    img_provider_dashboard = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\7.png"
+    img_bookings_whatsapp = r"C:\Users\asare\.gemini\antigravity-ide\brain\e3cac478-bded-4431-9c22-c69c8cba286a\.user_uploaded\media_1789022729518.png"
+
     # Base Normal Style setup
     style_normal = doc.styles['Normal']
     font = style_normal.font
@@ -70,7 +81,6 @@ def main():
     sec_cover.different_first_page_header_footer = True
     set_section_page_number_type(sec_cover, num_format='lowerRoman', start=1)
 
-    # Title Page content (Single spaced)
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.line_spacing = 1.15
@@ -126,7 +136,6 @@ def main():
     sec_prelim.footer.is_linked_to_previous = False
     set_section_page_number_type(sec_prelim, num_format='lowerRoman', start=2)
 
-    # Footer for preliminary pages: centered lowercase roman
     footer_prelim = sec_prelim.footer.paragraphs[0]
     footer_prelim.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer_prelim_run = footer_prelim.add_run()
@@ -134,7 +143,6 @@ def main():
     footer_prelim_run.font.size = Pt(12)
     add_footer_page_number(footer_prelim_run)
 
-    # Helper function for Major Headings
     def add_major_heading(title, is_chapter=False, chapter_num=""):
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -155,13 +163,11 @@ def main():
             r.font.name = 'Times New Roman'
             r.font.size = Pt(14)
             r.font.bold = True
-        # empty double-spaced line after major heading
         p_empty = doc.add_paragraph()
         p_empty.paragraph_format.line_spacing = 2.0
         p_empty.paragraph_format.space_after = Pt(0)
         p_empty.paragraph_format.space_before = Pt(0)
 
-    # Helper for Subheadings
     def add_subheading(text, level=1):
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -189,6 +195,39 @@ def main():
         r.font.size = Pt(12)
         return p
 
+    def add_figure(image_path, caption_text, width_cm=13.5):
+        if not os.path.exists(image_path):
+            print(f"Warning: image path not found: {image_path}")
+            return
+        p_empty_above = doc.add_paragraph()
+        p_empty_above.paragraph_format.line_spacing = 2.0
+        p_empty_above.paragraph_format.space_before = Pt(0)
+        p_empty_above.paragraph_format.space_after = Pt(0)
+
+        p_img = doc.add_paragraph()
+        p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img.paragraph_format.line_spacing = 1.0
+        p_img.paragraph_format.space_before = Pt(0)
+        p_img.paragraph_format.space_after = Pt(4)
+        p_img.paragraph_format.keep_with_next = True
+        r_img = p_img.add_run()
+        r_img.add_picture(image_path, width=Cm(width_cm))
+
+        p_cap = doc.add_paragraph()
+        p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_cap.paragraph_format.line_spacing = 1.15
+        p_cap.paragraph_format.space_before = Pt(4)
+        p_cap.paragraph_format.space_after = Pt(6)
+        r_cap = p_cap.add_run(caption_text)
+        r_cap.font.name = 'Times New Roman'
+        r_cap.font.size = Pt(12)
+        r_cap.font.italic = True
+
+        p_empty_below = doc.add_paragraph()
+        p_empty_below.paragraph_format.line_spacing = 2.0
+        p_empty_below.paragraph_format.space_before = Pt(0)
+        p_empty_below.paragraph_format.space_after = Pt(0)
+
     # --- DECLARATION PAGE (ii) ---
     add_major_heading("DECLARATION")
     add_body_paragraph(
@@ -197,7 +236,6 @@ def main():
         "or written by another person, nor material which has been accepted for the award of any other degree of the "
         "University or any other institute of higher learning, except where due acknowledgment has been made in the text."
     )
-
     p_sig = doc.add_paragraph()
     p_sig.paragraph_format.line_spacing = 1.5
     p_sig.paragraph_format.space_before = Pt(24)
@@ -208,7 +246,6 @@ def main():
         "guidelines on supervision of thesis laid down by the Department of Computer Science, Kwame Nkrumah University "
         "of Science and Technology."
     )
-
     p_sup = doc.add_paragraph()
     p_sup.paragraph_format.line_spacing = 1.5
     p_sup.paragraph_format.space_before = Pt(24)
@@ -264,9 +301,6 @@ def main():
     # --- TABLE OF CONTENTS (vi) ---
     doc.add_page_break()
     add_major_heading("TABLE OF CONTENTS")
-    p_toc = doc.add_paragraph()
-    p_toc.paragraph_format.line_spacing = 1.15
-    p_toc.paragraph_format.space_after = Pt(4)
     toc_items = [
         ("DECLARATION", "ii"),
         ("ABSTRACT", "iii"),
@@ -292,14 +326,14 @@ def main():
         ("  3.4 System Data Flow and Operational Workflow Description", "33"),
         ("CHAPTER IV: IMPLEMENTATION, TESTING, AND RESULTS DISCUSSION", "38"),
         ("  4.1 System Construction and Technology Stack Implementation", "38"),
-        ("  4.2 Functional Testing and Demonstration", "44"),
-        ("  4.3 Analysis and Discussion of Research Findings", "49"),
-        ("CHAPTER V: CONCLUSION AND RECOMMENDATION", "54"),
-        ("  5.1 Summary of Main Study Findings", "54"),
-        ("  5.2 Directions for Future Research", "56"),
-        ("REFERENCES", "58"),
-        ("APPENDIX A: Sanity Database Schema Definitions", "62"),
-        ("APPENDIX B: Core API Route Handlers and Integration Scripts", "65"),
+        ("  4.2 Functional Testing and Demonstration", "46"),
+        ("  4.3 Analysis and Discussion of Research Findings", "52"),
+        ("CHAPTER V: CONCLUSION AND RECOMMENDATION", "57"),
+        ("  5.1 Summary of Main Study Findings", "57"),
+        ("  5.2 Directions for Future Research", "59"),
+        ("REFERENCES", "61"),
+        ("APPENDIX A: Sanity Database Schema Definitions", "65"),
+        ("APPENDIX B: Core API Route Handlers and Integration Scripts", "68"),
     ]
     for item, pg in toc_items:
         p_row = doc.add_paragraph()
@@ -308,20 +342,19 @@ def main():
         dots = "." * (75 - len(item) - len(pg))
         p_row.add_run(f"{item} {dots} {pg}")
 
-    # --- LIST OF FIGURES (vii) ---
+    # --- LIST OF FIGURES (viii) ---
     doc.add_page_break()
     add_major_heading("LIST OF FIGURES")
     figures_list = [
-        ("Figure 1-1: Informal artisan hiring workflow friction in Ghana", "6"),
-        ("Figure 2-1: Comparative taxonomy of on-demand digital labor platforms", "15"),
-        ("Figure 3-1: High-level System Architecture and Component Interconnects", "24"),
-        ("Figure 3-2: Customer and Provider Dual-Role Authentication Pipeline", "28"),
-        ("Figure 3-3: Headless Sanity Data Schema Relational Mapping", "31"),
-        ("Figure 3-4: End-to-End Service Booking and State Machine Transition Flowchart", "35"),
-        ("Figure 3-5: Hybrid WhatsApp Deep-Linking Communication Flow", "37"),
-        ("Figure 4-1: Service Discovery and Category Navigation User Interface", "45"),
-        ("Figure 4-2: Provider Real-Time Orders Management Dashboard", "47"),
-        ("Figure 4-3: Booking Cancellation and Dynamic List Reconciliation", "51"),
+        ("Figure 3-1: System Architectural Block Diagram and Network Topology", "25"),
+        ("Figure 3-2: Fix it Design System Standards, Palette, and Typography Tokens", "28"),
+        ("Figure 4-1: Customer Service Discovery and Search Catalog Interface", "40"),
+        ("Figure 4-2: User Persona and Role Selection Modal Interface", "42"),
+        ("Figure 4-3: Personalized Client Welcome Hub and Category Recommendations", "44"),
+        ("Figure 4-4: Multi-Tier Package Scope and Service Pricing Details", "47"),
+        ("Figure 4-5: Customer Bookings Management and Direct WhatsApp Action Bridge", "49"),
+        ("Figure 4-6: Provider Onboarding Profile Builder and Verification Interface", "51"),
+        ("Figure 4-7: Provider Real-Time Orders and Job Execution Dashboard", "53"),
     ]
     for fig_title, fig_pg in figures_list:
         p_f = doc.add_paragraph()
@@ -330,17 +363,17 @@ def main():
         dots = "." * (72 - len(fig_title) - len(fig_pg))
         p_f.add_run(f"{fig_title} {dots} {fig_pg}")
 
-    # --- LIST OF TABLES (viii) ---
+    # --- LIST OF TABLES (ix) ---
     doc.add_page_break()
     add_major_heading("LIST OF TABLES")
     tables_list = [
         ("Table 1-1: Key Challenges in Conventional Artisan Hiring in Ghana", "5"),
         ("Table 2-1: Comparison of Existing Artisan and Freelance Platforms", "17"),
-        ("Table 3-1: System Technology Stack Selection Matrix", "26"),
-        ("Table 3-2: Entity Attributes and Data Validation Rules in Sanity CMS", "32"),
-        ("Table 4-1: API Endpoints and Functional Payload Verification", "43"),
-        ("Table 4-2: Test Execution Matrix for Job Lifecycle Operations", "48"),
-        ("Table 4-3: Platform Latency and Performance Benchmark Results", "52"),
+        ("Table 3-1: High-level System Topology and Component Responsibilities", "24"),
+        ("Table 3-2: Entity Attributes and Data Validation Rules in Sanity CMS", "31"),
+        ("Table 4-1: API Endpoints and Functional Payload Verification", "39"),
+        ("Table 4-2: Test Execution Matrix for Job Lifecycle Operations", "46"),
+        ("Table 4-3: Platform Latency and Performance Benchmark Results", "54"),
     ]
     for tab_title, tab_pg in tables_list:
         p_t = doc.add_paragraph()
@@ -349,7 +382,7 @@ def main():
         dots = "." * (72 - len(tab_title) - len(tab_pg))
         p_t.add_run(f"{tab_title} {dots} {tab_pg}")
 
-    # --- LIST OF ABBREVIATIONS (ix) ---
+    # --- LIST OF ABBREVIATIONS (x) ---
     doc.add_page_break()
     add_major_heading("LIST OF ABBREVIATIONS")
     abbrev_list = [
@@ -357,10 +390,10 @@ def main():
         ("CDN", "Content Delivery Network"),
         ("CMS", "Content Management System"),
         ("CORS", "Cross-Origin Resource Sharing"),
-        ("CRLF", "Carriage Return Line Feed"),
         ("CRUD", "Create, Read, Update, Delete"),
         ("CSS", "Cascading Style Sheets"),
         ("DOM", "Document Object Model"),
+        ("GHS", "Ghana Cedi (Currency code)"),
         ("GROQ", "Graph Relational Object Queries"),
         ("HTTP", "Hypertext Transfer Protocol"),
         ("HTTPS", "Hypertext Transfer Protocol Secure"),
@@ -371,6 +404,7 @@ def main():
         ("JWT", "JSON Web Token"),
         ("OAuth", "Open Authorization"),
         ("OS", "Operating System"),
+        ("PWA", "Progressive Web Application"),
         ("RBAC", "Role-Based Access Control"),
         ("REST", "Representational State Transfer"),
         ("SDK", "Software Development Kit"),
@@ -379,7 +413,6 @@ def main():
         ("URI", "Uniform Resource Identifier"),
         ("URL", "Uniform Resource Locator"),
         ("UX", "User Experience"),
-        ("VCF", "Variant Call Format"),
         ("Vercel", "Cloud Platform for Static and Serverless Deployment"),
     ]
     for abbr, full in abbrev_list:
@@ -399,7 +432,6 @@ def main():
     sec_body.footer.is_linked_to_previous = False
     set_section_page_number_type(sec_body, num_format='decimal', start=1)
 
-    # Footer for Body text: centered Arabic numeral
     footer_body = sec_body.footer.paragraphs[0]
     footer_body.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer_body_run = footer_body.add_run()
@@ -471,10 +503,9 @@ def main():
         "Despite significant technological digitization across Ghana's banking, retail, and transportation sectors (exemplified by Mobile "
         "Money interoperability and ride-hailing services), the domestic home repair and artisan economy remains heavily informal, opaque, "
         "and fragmented. Homeowners, tenants, and business proprietors face several critical vulnerabilities when attempting to engage home "
-        "technicians:"
+        "technicians, as summarized in Table 1-1."
     )
 
-    # Table 1-1
     p_t1 = doc.add_paragraph()
     p_t1.paragraph_format.line_spacing = 1.15
     p_t1.paragraph_format.space_before = Pt(12)
@@ -585,7 +616,6 @@ def main():
         "undermines consumer confidence [6]."
     )
 
-    # Table 2-1
     p_t2 = doc.add_paragraph()
     p_t2.paragraph_format.line_spacing = 1.15
     p_t2.paragraph_format.space_before = Pt(12)
@@ -653,18 +683,17 @@ def main():
     add_body_paragraph(
         "The system architecture conforms to a modern multi-tier cloud topology comprising the Client Presentation Layer, the Application "
         "Routing and Serverless Compute Layer, the Identity and Access Control Layer, the Headless Data Lake, and External Communication Services. "
-        "Figure 3-1 illustrates the comprehensive block diagram and component interconnects of the platform."
+        "Table 3-1 provides the architectural breakdown, while Figure 3-1 presents the high-level structural block diagram."
     )
 
-    # Architectural ASCII Table Representation for Block Diagram
-    p_f31 = doc.add_paragraph()
-    p_f31.paragraph_format.line_spacing = 1.15
-    p_f31.paragraph_format.space_before = Pt(12)
-    p_f31.paragraph_format.space_after = Pt(4)
-    run_f31 = p_f31.add_run("Figure 3-1: High-level System Architecture and Component Interconnects")
-    run_f31.font.name = 'Times New Roman'
-    run_f31.font.size = Pt(12)
-    run_f31.font.italic = True
+    p_t31 = doc.add_paragraph()
+    p_t31.paragraph_format.line_spacing = 1.15
+    p_t31.paragraph_format.space_before = Pt(12)
+    p_t31.paragraph_format.space_after = Pt(4)
+    run_t31 = p_t31.add_run("Table 3-1: High-level System Topology and Component Responsibilities")
+    run_t31.font.name = 'Times New Roman'
+    run_t31.font.size = Pt(12)
+    run_t31.font.bold = True
 
     tab_arch = doc.add_table(rows=6, cols=2)
     tab_arch.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -691,11 +720,12 @@ def main():
                     run_c.font.bold = True
 
     add_body_paragraph(
-        "As detailed in Figure 3-1, incoming client requests pass through Next.js edge middleware for authentication verification. Static and "
-        "server-rendered pages fetch data directly from Sanity CMS via CDN-cached GROQ queries, guaranteeing exceptional load times. User actions "
-        "such as booking submissions or profile modifications are validated against server-side authorization boundaries before issuing mutations "
-        "with secure API write tokens."
+        "To illustrate the visual presentation framework and standardized tokenization governing every screen of the application, "
+        "Figure 3-2 illustrates the comprehensive design system specification of Fix it Marketplace."
     )
+
+    # EMBED FIGURE 3-2: DESIGN SYSTEM
+    add_figure(img_design_system, "Figure 3-2: Fix it Design System Standards, Palette, and Typography Tokens", width_cm=13.5)
 
     add_subheading("3.3 System Component and Circuit Design Concepts")
     add_body_paragraph(
@@ -715,7 +745,6 @@ def main():
         "and visual asset references."
     )
 
-    # Table 3-2: Schema mapping
     p_t3 = doc.add_paragraph()
     p_t3.paragraph_format.line_spacing = 1.15
     p_t3.paragraph_format.space_before = Pt(12)
@@ -760,24 +789,16 @@ def main():
     add_subheading("3.4 System Data Flow and Operational Workflow Description")
     add_body_paragraph(
         "The end-to-end lifecycle of a domestic service engagement on Fix it Marketplace follows a deterministic state machine: "
-        "Requested &rarr; Confirmed &rarr; In Progress &rarr; Completed (or Cancelled). Figure 3-4 illustrates the lifecycle data flow:"
-    )
-    add_body_paragraph(
+        "Requested &rarr; Confirmed &rarr; In Progress &rarr; Completed (or Cancelled). The operational phases proceed as follows:\n\n"
         "Phase 1: Service Selection and Booking Inception. The domestic consumer discovers an artisan through category navigation or full-text "
         "search. Upon selecting a package (e.g., 'Standard Residential Leak Repair'), the consumer triggers `ServiceBookingModal`, specifying the "
-        "delivery address, desired appointment date, and scope notes. Submitting the modal issues an authenticated `POST /api/bookings` payload."
-    )
-    add_body_paragraph(
+        "delivery address, desired appointment date, and scope notes. Submitting the modal issues an authenticated `POST /api/bookings` payload.\n\n"
         "Phase 2: Database Ingestion and Provider Notification. The server-side API handler ensures the customer has an active `customerProfile` "
         "in Sanity, resolves the exact provider reference from the service document, and commits a new `booking` document with status 'requested'. "
-        "The booking immediately surfaces in the customer's `/bookings` dashboard and the provider's `/provider/dashboard?tab=orders` queue."
-    )
-    add_body_paragraph(
+        "The booking immediately surfaces in the customer's `/bookings` dashboard and the provider's `/provider/dashboard?tab=orders` queue.\n\n"
         "Phase 3: Acceptance, Dispatch, and Communication. The provider reviews the incoming order and can either confirm or decline. Upon "
         "confirmation, both parties can utilize the direct WhatsApp button to coordinate physical arrival, access codes, and directions. "
-        "When arriving on site, the provider transitions status to 'in_progress', and upon successful execution, marks the job 'completed'."
-    )
-    add_body_paragraph(
+        "When arriving on site, the provider transitions status to 'in_progress', and upon successful execution, marks the job 'completed'.\n\n"
         "Phase 4: Cancellation and Reconciled State Purging. If a customer or provider cancels a request, a `PATCH /api/bookings` mutation updates "
         "the document status to 'cancelled'. Concurrently, client-side state reconciliation purges the booking from the active view and tab counts, "
         "ensuring immediate removal and eliminating visual clutter."
@@ -793,10 +814,10 @@ def main():
     add_body_paragraph(
         "The construction of Fix it Marketplace was executed using modern modular software engineering principles. The development environment "
         "leveraged Node.js v24 LTS, TypeScript 5, Next.js 16 utilizing the Turbopack compilation engine, and Tailwind CSS / Vanilla CSS design tokens. "
-        "Data persistence and headless studio management were implemented through Sanity Studio v3."
+        "Data persistence and headless studio management were implemented through Sanity Studio v3. Table 4-1 lists the core API endpoints implemented "
+        "in the system compute tier."
     )
 
-    # Table 4-1
     p_t41 = doc.add_paragraph()
     p_t41.paragraph_format.line_spacing = 1.15
     p_t41.paragraph_format.space_before = Pt(12)
@@ -831,12 +852,61 @@ def main():
                     run_c.font.bold = True
 
     add_body_paragraph(
-        "A key implementation achievement was the resolution of modal flashing and authentication latency. In earlier iterations, the role "
-        "selection modal (`RoleModal`) opened inadvertently during initial hydration because the component evaluated an uninitialized loading state "
-        "(`!isLoaded`). This was corrected by introducing an `isClientReady` mount guard and an explicit `isFirstTimeUser` verification check, "
-        "ensuring the modal only renders for genuine first-time registrants. Furthermore, local JWT extraction optimizations in `lib/auth/get-user.ts` "
-        "drastically reduced backend roundtrips during authentication handshakes."
+        "The concrete construction and visual demonstration of the system across primary user flows are detailed below in Figures 4-1 through 4-7."
     )
+
+    # EMBED FIGURE 4-1: SEARCH & CATALOG DISCOVERY
+    add_body_paragraph(
+        "Figure 4-1 demonstrates the service catalog and discovery interface (`/search`). Domestic clients can filter services by trade "
+        "categories (Plumbing, Cleaning, Electrical Repairs, Painting, etc.), location in Ghana, and price range with instant sub-second "
+        "re-querying."
+    )
+    add_figure(img_search_catalog, "Figure 4-1: Customer Service Discovery and Search Catalog Interface", width_cm=13.5)
+
+    # EMBED FIGURE 4-2: ROLE SELECTION MODAL
+    add_body_paragraph(
+        "Figure 4-2 demonstrates the user persona and role onboarding modal (`RoleModal`). Designed to ensure seamless persona routing, "
+        "the modal is shown strictly to first-time registered users. Users select whether they intend to hire services as a Client or offer "
+        "professional services as an Artisan/Freelancer. Crucially, the implementation guards against uninitialized loading states, eliminating "
+        "any visual flash for returning users."
+    )
+    add_figure(img_role_modal, "Figure 4-2: User Persona and Role Selection Modal Interface", width_cm=12.5)
+
+    # EMBED FIGURE 4-3: PERSONALIZED WELCOME HUB
+    add_body_paragraph(
+        "Upon completing persona selection, customers are greeted by the personalized welcome dashboard illustrated in Figure 4-3. "
+        "The interface surfaces contextual recommendations, activity shortcuts, and verified artisan profiles matching the user's domestic needs."
+    )
+    add_figure(img_welcome_hub, "Figure 4-3: Personalized Client Welcome Hub and Category Recommendations", width_cm=13.5)
+
+    # EMBED FIGURE 4-4: MULTI-TIER PACKAGE SCOPE & PRICING
+    add_body_paragraph(
+        "Figure 4-4 illustrates the service detail page showcasing standardized multi-tier package specifications (Basic, Standard, Premium). "
+        "Each package explicitly articulates deliverables, turnaround hours, and exact pricing in Ghana Cedis (GHS), eradicating price ambiguity."
+    )
+    add_figure(img_service_detail, "Figure 4-4: Multi-Tier Package Scope and Service Pricing Details", width_cm=13.5)
+
+    # EMBED FIGURE 4-5: CUSTOMER BOOKINGS & WHATSAPP BRIDGE
+    add_body_paragraph(
+        "Figure 4-5 illustrates the customer's order management dashboard (`/bookings`). The view presents scheduled appointments, "
+        "job status badges, and the direct 'Chat on WhatsApp' button. When a booking request is cancelled, the state engine immediately purges "
+        "the card from the view and synchronizes the active tab count without requiring a manual page refresh."
+    )
+    add_figure(img_bookings_whatsapp, "Figure 4-5: Customer Bookings Management and Direct WhatsApp Action Bridge", width_cm=13.5)
+
+    # EMBED FIGURE 4-6: PROVIDER ONBOARDING PROFILE BUILDER
+    add_body_paragraph(
+        "On the supply side, service providers establish their digital credibility using the profile builder shown in Figure 4-6. "
+        "Artisans specify their primary trade, professional headline, years of experience, technical certifications, and WhatsApp contact phone."
+    )
+    add_figure(img_provider_onboarding, "Figure 4-6: Provider Onboarding Profile Builder and Verification Interface", width_cm=13.5)
+
+    # EMBED FIGURE 4-7: PROVIDER ORDERS MANAGEMENT DASHBOARD
+    add_body_paragraph(
+        "Figure 4-7 demonstrates the provider's active orders control center (`/provider/dashboard`). Technicians can review incoming booking requests, "
+        "inspect client addresses, accept jobs, update statuses to 'In Progress' or 'Completed', and trigger immediate customer WhatsApp chats."
+    )
+    add_figure(img_provider_dashboard, "Figure 4-7: Provider Real-Time Orders and Job Execution Dashboard", width_cm=13.5)
 
     add_subheading("4.2 Functional Testing and Demonstration")
     add_body_paragraph(
@@ -844,7 +914,6 @@ def main():
         "conducted across the platform. Table 4-2 summarizes the core test execution matrix and verification results."
     )
 
-    # Table 4-2
     p_t42 = doc.add_paragraph()
     p_t42.paragraph_format.line_spacing = 1.15
     p_t42.paragraph_format.space_before = Pt(12)
@@ -890,7 +959,6 @@ def main():
         "network latency across major application routes are documented in Table 4-3."
     )
 
-    # Table 4-3
     p_t43 = doc.add_paragraph()
     p_t43.paragraph_format.line_spacing = 1.15
     p_t43.paragraph_format.space_before = Pt(12)
