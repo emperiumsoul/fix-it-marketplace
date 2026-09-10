@@ -52,16 +52,17 @@ def set_section_page_number_type(section, num_format='lowerRoman', start=1):
 def main():
     doc = docx.Document()
 
-    # Image asset absolute paths
-    img_design_system = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\fix it design system.png"
-    img_homepage = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\1.png"
-    img_role_modal = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\2.png"
-    img_welcome_hub = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\3.png"
-    img_search_catalog = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\4.png"
-    img_service_detail = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\5.png"
-    img_provider_onboarding = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\6.png"
-    img_provider_dashboard = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\.design\7.png"
-    img_bookings_whatsapp = r"C:\Users\asare\.gemini\antigravity-ide\brain\e3cac478-bded-4431-9c22-c69c8cba286a\.user_uploaded\media_1789022729518.png"
+    # Live website screenshot absolute paths (captured directly from running web application)
+    screenshots_dir = r"c:\Users\asare\Desktop\sample\fix-it-marketplace\public\screenshots"
+    img_design_system = os.path.join(screenshots_dir, "live_figure_3_2_design_system.png")
+    img_homepage = os.path.join(screenshots_dir, "live_figure_4_1_homepage_catalog.png")
+    img_role_modal = os.path.join(screenshots_dir, "live_figure_4_2_persona_modal.png")
+    img_welcome_hub = os.path.join(screenshots_dir, "live_figure_4_3_personalized_welcome.png")
+    img_search_catalog = os.path.join(screenshots_dir, "live_figure_4_1_homepage_catalog.png")
+    img_service_detail = os.path.join(screenshots_dir, "live_figure_4_4_service_detail_tiers.png")
+    img_bookings_whatsapp = os.path.join(screenshots_dir, "live_figure_4_5_client_bookings.png")
+    img_provider_onboarding = os.path.join(screenshots_dir, "live_figure_4_6_provider_onboarding.png")
+    img_provider_dashboard = os.path.join(screenshots_dir, "live_figure_4_7_provider_dashboard.png")
 
     # Base Normal Style setup
     style_normal = doc.styles['Normal']
